@@ -28,7 +28,6 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.Info
@@ -387,7 +386,7 @@ private fun DesignThumbnailCard(
                         onClick = onSetActive,
                         modifier = Modifier.minimumInteractiveComponentSize(),
                     ) {
-                        Text("選ぶ")
+                        Text(if (isWallpaperActive) "壁紙に反映" else "選ぶ")
                     }
                 }
 
@@ -408,18 +407,6 @@ private fun DesignThumbnailCard(
                         expanded = menuExpanded,
                         onDismissRequest = { menuExpanded = false },
                     ) {
-                        if (!isActive && isWallpaperActive) {
-                            DropdownMenuItem(
-                                text = { Text("壁紙に反映") },
-                                leadingIcon = {
-                                    Icon(Icons.Outlined.CheckCircle, contentDescription = null)
-                                },
-                                onClick = {
-                                    menuExpanded = false
-                                    onSetActive()
-                                },
-                            )
-                        }
                         DropdownMenuItem(
                             text = { Text("複製") },
                             leadingIcon = {

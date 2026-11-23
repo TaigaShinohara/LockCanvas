@@ -120,6 +120,7 @@ fun LockCanvasApp(
         ScreenRoute.Editor -> EditorScreen(
             state = editorState,
             liveSnapshot = liveSnapshot,
+            isWallpaperActive = isWallpaperActive,
             snackbarHostState = snackbarHostState,
             onBack = { viewModel.openHome() },
             onSaveAndApply = { viewModel.saveAndApplyCurrentDesign() },

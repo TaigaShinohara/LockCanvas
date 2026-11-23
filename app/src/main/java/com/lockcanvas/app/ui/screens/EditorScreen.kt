@@ -146,6 +146,7 @@ import kotlin.math.roundToInt
 fun EditorScreen(
     state: EditorUiState,
     liveSnapshot: DynamicDataSnapshot,
+    isWallpaperActive: Boolean,
     snackbarHostState: SnackbarHostState,
     onBack: () -> Unit,
     onSaveAndApply: () -> Unit,
@@ -327,7 +328,10 @@ fun EditorScreen(
                             .minimumInteractiveComponentSize()
                             .heightIn(min = 48.dp),
                     ) {
-                        Text("保存して反映", style = MaterialTheme.typography.labelLarge)
+                        Text(
+                            text = if (isWallpaperActive) "保存して反映" else "保存して選ぶ",
+                            style = MaterialTheme.typography.labelLarge,
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -1573,7 +1577,7 @@ private fun LayersPanel(
             ) {
                 IconButton(
                     onClick = { onToggleVisibility(el.id) },
-                    modifier = Modifier.size(32.dp),
+                    modifier = Modifier.size(48.dp),
                 ) {
                     Icon(
                         imageVector = if (el.visible) {

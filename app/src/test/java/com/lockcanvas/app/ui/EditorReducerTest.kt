@@ -124,6 +124,37 @@ class EditorReducerTest {
     }
 
     @Test
+    fun deletingTargetElementRemovesDependentRulesWithoutChangingOtherRules() {
+        val initial = baseState()
+        val dependentRule = ConditionalRule(
+            id = "rule_dependent",
+            name = "対象テキストを隠す",
+            condition = RuleCondition.IsCharging,
+            action = RuleAction.ToggleElementVisibility(
+                elementId = "el_b",
+                visible = false,
+            ),
+        )
+        val independentRule = ConditionalRule(
+            id = "rule_independent",
+            name = "夜間の背景",
+            condition = RuleCondition.NightTime(),
+            action = RuleAction.OverrideBackground(0xFF000000),
+        )
+        val withRules = initial.copy(
+            design = initial.design.copy(
+                rules = listOf(dependentRule, independentRule),
+            ),
+        )
+
+        val deleted = EditorReducer.deleteElement(withRules, "el_b")
+
+        assertFalse(deleted.design.elements.any { it.id == "el_b" })
+        assertEquals(listOf("rule_independent"), deleted.design.rules.map { it.id })
+        assertTrue(deleted.hasUnsavedChanges)
+    }
+
+    @Test
     fun snapToCenterSnapsWithinThresholdAndPreservesOutside() {
         val bothSnapped = EditorReducer.snapToCenter(0.51f, 0.485f)
         assertTrue(bothSnapped.snappedX)

@@ -6,6 +6,7 @@ import com.lockcanvas.app.model.CanvasElement
 import com.lockcanvas.app.model.ConditionalRule
 import com.lockcanvas.app.model.DynamicDataSnapshot
 import com.lockcanvas.app.model.ImageElement
+import com.lockcanvas.app.model.RuleAction
 import com.lockcanvas.app.model.PresetDesigns
 import com.lockcanvas.app.model.ShapeElement
 import com.lockcanvas.app.model.TextElement
@@ -223,10 +224,20 @@ object EditorReducer {
     ): EditorUiState {
         if (state.design.elements.none { it.id == elementId }) return state
         val remaining = state.design.elements.filterNot { it.id == elementId }
+        val remainingRules = state.design.rules.filterNot { rule ->
+            when (val action = rule.action) {
+                is RuleAction.OverrideElementText -> action.elementId == elementId
+                is RuleAction.ToggleElementVisibility -> action.elementId == elementId
+                is RuleAction.OverrideBackground -> false
+            }
+        }
         val nextSelected = if (state.selectedElementId == elementId) null else state.selectedElementId
         return pushDesignChange(
             state = state,
-            newDesign = state.design.copy(elements = remaining),
+            newDesign = state.design.copy(
+                elements = remaining,
+                rules = remainingRules,
+            ),
             selectedElementId = nextSelected,
         )
     }
