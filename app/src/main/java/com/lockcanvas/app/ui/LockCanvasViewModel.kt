@@ -41,6 +41,12 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+data class SnackbarEvent(
+    val message: String,
+    val actionLabel: String? = null,
+    val openWallpaperPickerOnAction: Boolean = false,
+)
+
 class LockCanvasViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = DesignRepository.getInstance(application)
@@ -73,8 +79,8 @@ class LockCanvasViewModel(application: Application) : AndroidViewModel(applicati
     )
     val isWallpaperActive: StateFlow<Boolean> = _isWallpaperActive.asStateFlow()
 
-    private val _snackbarMessages = MutableSharedFlow<String>(extraBufferCapacity = 4)
-    val snackbarMessages: SharedFlow<String> = _snackbarMessages.asSharedFlow()
+    private val _snackbarMessages = MutableSharedFlow<SnackbarEvent>(extraBufferCapacity = 4)
+    val snackbarMessages: SharedFlow<SnackbarEvent> = _snackbarMessages.asSharedFlow()
 
     private var gestureStartDesign: CanvasDesign? = null
     private var gestureElementId: String? = null
@@ -192,7 +198,19 @@ class LockCanvasViewModel(application: Application) : AndroidViewModel(applicati
     fun applyDesign(designId: String) {
         viewModelScope.launch {
             repository.setActiveDesign(designId)
-            _snackbarMessages.tryEmit("ライブ壁紙のデザインを切り替えました")
+            val active = WallpaperLauncher.isLockCanvasActive(getApplication())
+            _isWallpaperActive.value = active
+            if (active) {
+                _snackbarMessages.tryEmit(SnackbarEvent("ロック画面のデザインを切り替えました"))
+            } else {
+                _snackbarMessages.tryEmit(
+                    SnackbarEvent(
+                        message = "デザインを選択しました",
+                        actionLabel = "壁紙に設定",
+                        openWallpaperPickerOnAction = true,
+                    ),
+                )
+            }
         }
     }
 
@@ -200,7 +218,7 @@ class LockCanvasViewModel(application: Application) : AndroidViewModel(applicati
         viewModelScope.launch {
             val copy = repository.duplicateDesign(designId)
             if (copy != null) {
-                _snackbarMessages.tryEmit("「${copy.name}」を複製しました")
+                _snackbarMessages.tryEmit(SnackbarEvent("「${copy.name}」を複製しました"))
             }
         }
     }
@@ -208,14 +226,14 @@ class LockCanvasViewModel(application: Application) : AndroidViewModel(applicati
     fun deleteSavedDesign(designId: String) {
         viewModelScope.launch {
             repository.deleteDesign(designId)
-            _snackbarMessages.tryEmit("デザインを削除しました")
+            _snackbarMessages.tryEmit(SnackbarEvent("デザインを削除しました"))
         }
     }
 
     fun resetToPresets() {
         viewModelScope.launch {
             repository.resetToPresets()
-            _snackbarMessages.tryEmit("プリセットデザインを初期化しました")
+            _snackbarMessages.tryEmit(SnackbarEvent("プリセットを初期状態に戻しました"))
         }
     }
 
@@ -225,14 +243,28 @@ class LockCanvasViewModel(application: Application) : AndroidViewModel(applicati
             repository.saveDesign(current)
             repository.setActiveDesign(current.id)
             _editorState.update { it.copy(hasUnsavedChanges = false) }
-            _snackbarMessages.tryEmit("保存してライブ壁紙に適用しました")
+            val active = WallpaperLauncher.isLockCanvasActive(getApplication())
+            _isWallpaperActive.value = active
+            if (active) {
+                _snackbarMessages.tryEmit(SnackbarEvent("保存してロック画面へ反映しました"))
+            } else {
+                _snackbarMessages.tryEmit(
+                    SnackbarEvent(
+                        message = "保存しました",
+                        actionLabel = "ロック画面に設定",
+                        openWallpaperPickerOnAction = true,
+                    ),
+                )
+            }
         }
     }
 
     fun launchLiveWallpaperPicker(): Boolean {
         val launched = WallpaperLauncher.launchLiveWallpaperPicker(getApplication())
         if (!launched) {
-            _snackbarMessages.tryEmit("壁紙ピッカーを開けませんでした。端末の「設定 > 壁紙」からLockCanvasを選択してください")
+            _snackbarMessages.tryEmit(
+                SnackbarEvent("壁紙ピッカーを開けませんでした。設定 > 壁紙 から選択してください"),
+            )
         }
         return launched
     }
@@ -241,10 +273,10 @@ class LockCanvasViewModel(application: Application) : AndroidViewModel(applicati
 
     fun selectElement(elementId: String?) {
         _editorState.update { current ->
-            val nextTab = if (elementId != null && current.activeTab == EditorToolTab.ADD) {
-                EditorToolTab.EDIT
-            } else {
-                current.activeTab
+            val nextTab = when {
+                elementId == null && current.activeTab == EditorToolTab.EDIT -> null
+                elementId != null && current.activeTab == EditorToolTab.ADD -> EditorToolTab.EDIT
+                else -> current.activeTab
             }
             current.copy(
                 selectedElementId = elementId,
@@ -481,7 +513,7 @@ class LockCanvasViewModel(application: Application) : AndroidViewModel(applicati
                 copyUriToInternalStorage(sourceUri)
             }
             if (savedFileUri == null) {
-                _snackbarMessages.tryEmit("画像の読み込みに失敗しました")
+                _snackbarMessages.tryEmit(SnackbarEvent("画像の読み込みに失敗しました"))
                 return@launch
             }
             if (replaceElementId != null) {

@@ -34,14 +34,13 @@ import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Smartphone
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -108,6 +107,14 @@ fun HomeScreen(
                     }
                 },
                 actions = {
+                    if (isWallpaperActive) {
+                        IconButton(onClick = onApplyWallpaperClick) {
+                            Icon(
+                                imageVector = Icons.Outlined.Wallpaper,
+                                contentDescription = "壁紙設定を開く",
+                            )
+                        }
+                    }
                     IconButton(onClick = onOpenSettingsInfo) {
                         Icon(
                             imageVector = Icons.Outlined.Info,
@@ -151,30 +158,10 @@ fun HomeScreen(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            item(span = { GridItemSpan(2) }) {
-                WallpaperStatusBanner(
-                    isWallpaperActive = isWallpaperActive,
-                    onApplyWallpaperClick = onApplyWallpaperClick,
-                )
-            }
-
-            item(span = { GridItemSpan(2) }) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 6.dp, bottom = 2.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    Text(
-                        text = "保存済みデザイン",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onBackground,
-                    )
-                    Text(
-                        text = "${designs.size}件",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+            if (!isWallpaperActive) {
+                item(span = { GridItemSpan(2) }) {
+                    WallpaperStatusBanner(
+                        onApplyWallpaperClick = onApplyWallpaperClick,
                     )
                 }
             }
@@ -222,100 +209,40 @@ fun HomeScreen(
 
 @Composable
 private fun WallpaperStatusBanner(
-    isWallpaperActive: Boolean,
     onApplyWallpaperClick: () -> Unit,
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surfaceContainer,
-        border = BorderStroke(
-            width = 1.dp,
-            color = if (isWallpaperActive) {
-                MaterialTheme.colorScheme.tertiary.copy(alpha = 0.55f)
-            } else {
-                MaterialTheme.colorScheme.outlineVariant
-            },
-        ),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(38.dp)
-                        .clip(CircleShape)
-                        .background(
-                            if (isWallpaperActive) {
-                                MaterialTheme.colorScheme.tertiary.copy(alpha = 0.16f)
-                            } else {
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
-                            },
-                        ),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        imageVector = if (isWallpaperActive) {
-                            Icons.Outlined.CheckCircle
-                        } else {
-                            Icons.Rounded.Smartphone
-                        },
-                        contentDescription = null,
-                        tint = if (isWallpaperActive) {
-                            MaterialTheme.colorScheme.tertiary
-                        } else {
-                            MaterialTheme.colorScheme.primary
-                        },
-                        modifier = Modifier.size(20.dp),
-                    )
-                }
-
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = if (isWallpaperActive) {
-                            "ライブ壁紙が有効です"
-                        } else {
-                            "ライブ壁紙が未設定です"
-                        },
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                    Text(
-                        text = if (isWallpaperActive) {
-                            "エディタで保存するとロック画面に即時反映されます"
-                        } else {
-                            "システム壁紙ピッカーからLockCanvasを設定してください"
-                        },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-
-            Button(
+            Icon(
+                imageVector = Icons.Rounded.Smartphone,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(20.dp),
+            )
+            Text(
+                text = "ライブ壁紙が未設定です",
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            FilledTonalButton(
                 onClick = onApplyWallpaperClick,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                ),
+                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
             ) {
-                Icon(
-                    imageVector = Icons.Outlined.Wallpaper,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp),
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = if (isWallpaperActive) "壁紙設定を開く" else "ロック画面に設定",
-                    style = MaterialTheme.typography.labelLarge,
-                )
+                Text("設定する")
             }
         }
     }
@@ -415,29 +342,22 @@ private fun DesignThumbnailCard(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = 12.dp, end = 4.dp, bottom = 8.dp),
+                    .padding(start = 12.dp, end = 2.dp, bottom = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = design.name,
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = "要素 ${design.elements.size} ・ ルール ${design.rules.size}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
+                Text(
+                    text = design.name,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
+                )
 
                 Box {
                     IconButton(
                         onClick = { menuExpanded = true },
-                        modifier = Modifier.size(34.dp),
+                        modifier = Modifier.size(48.dp),
                     ) {
                         Icon(
                             imageVector = Icons.Rounded.MoreVert,

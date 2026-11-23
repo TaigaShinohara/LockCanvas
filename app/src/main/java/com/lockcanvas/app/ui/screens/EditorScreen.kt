@@ -5,6 +5,11 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -33,6 +38,11 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material3.minimumInteractiveComponentSize
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -286,11 +296,12 @@ fun EditorScreen(
                     }
                     Button(
                         onClick = onSaveAndApply,
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 0.dp),
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier
                             .padding(end = 8.dp)
-                            .height(34.dp),
+                            .minimumInteractiveComponentSize()
+                            .heightIn(min = 38.dp),
                     ) {
                         Text("保存", style = MaterialTheme.typography.labelLarge)
                     }
@@ -328,7 +339,7 @@ fun EditorScreen(
                     onEndGesture = onEndGesture,
                 )
 
-                if (state.simulatorEnabled || matchedRuleIds.isNotEmpty()) {
+                if (state.simulatorEnabled) {
                     Surface(
                         modifier = Modifier
                             .align(Alignment.TopCenter)
@@ -337,14 +348,9 @@ fun EditorScreen(
                         color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.92f),
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)),
                     ) {
-                        val simLabel = if (state.simulatorEnabled) {
-                            val chargeText = if (state.simulatedIsCharging) "充電中" else "放電中"
-                            "シミュレータ: ${state.simulatedBatteryPercent}%・$chargeText・${state.simulatedHourOfDay}時"
-                        } else {
-                            "条件ルール一致: ${matchedRuleIds.size}件"
-                        }
+                        val chargeText = if (state.simulatedIsCharging) "充電中" else "放電中"
                         Text(
-                            text = simLabel,
+                            text = "シミュレータ: ${state.simulatedBatteryPercent}%・$chargeText・${state.simulatedHourOfDay}時",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
@@ -353,8 +359,13 @@ fun EditorScreen(
                 }
             }
 
-            // Expandable Tool Panel above Dock
-            state.activeTab?.let { tab ->
+            // Expandable Tool Panel above Dock (Progressive Disclosure)
+            AnimatedVisibility(
+                visible = state.activeTab != null,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut(),
+            ) {
+                state.activeTab?.let { tab ->
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -367,7 +378,7 @@ fun EditorScreen(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 4.dp),
+                                .padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 2.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween,
                         ) {
@@ -378,12 +389,12 @@ fun EditorScreen(
                             )
                             IconButton(
                                 onClick = { onSelectToolTab(null) },
-                                modifier = Modifier.size(30.dp),
+                                modifier = Modifier.size(48.dp),
                             ) {
                                 Icon(
                                     imageVector = Icons.Rounded.Close,
                                     contentDescription = "パネルを閉じる",
-                                    modifier = Modifier.size(18.dp),
+                                    modifier = Modifier.size(20.dp),
                                 )
                             }
                         }
@@ -454,6 +465,7 @@ fun EditorScreen(
                         }
                     }
                 }
+                }
             }
 
             // Bottom Tool Dock
@@ -491,6 +503,7 @@ fun EditorScreen(
                         icon = Icons.Outlined.Tune,
                         label = "条件ルール",
                         selected = state.activeTab == EditorToolTab.RULES,
+                        hasIndicator = matchedRuleIds.isNotEmpty() || state.simulatorEnabled,
                         onClick = { onSelectToolTab(EditorToolTab.RULES) },
                     )
                     DockTabItem(
@@ -727,35 +740,61 @@ private fun DockTabItem(
     icon: ImageVector,
     label: String,
     selected: Boolean,
+    hasIndicator: Boolean = false,
     onClick: () -> Unit,
 ) {
-    val tint = if (selected) {
-        MaterialTheme.colorScheme.primary
+    val iconTint = if (selected) {
+        MaterialTheme.colorScheme.onSecondaryContainer
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    val labelTint = if (selected) {
+        MaterialTheme.colorScheme.onSurface
     } else {
         MaterialTheme.colorScheme.onSurfaceVariant
     }
     Column(
         modifier = Modifier
-            .clip(RoundedCornerShape(12.dp))
-            .background(
-                if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                else Color.Transparent,
-            )
-            .clickable(onClick = onClick)
-            .padding(horizontal = 10.dp, vertical = 6.dp),
+            .widthIn(min = 56.dp)
+            .heightIn(min = 48.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .semantics { this.selected = selected }
+            .clickable(role = Role.Tab, onClick = onClick)
+            .padding(horizontal = 4.dp, vertical = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(2.dp),
+        verticalArrangement = Arrangement.spacedBy(3.dp),
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = label,
-            tint = tint,
-            modifier = Modifier.size(20.dp),
-        )
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(99.dp))
+                .background(
+                    if (selected) MaterialTheme.colorScheme.secondaryContainer
+                    else Color.Transparent,
+                )
+                .padding(horizontal = 14.dp, vertical = 4.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = iconTint,
+                modifier = Modifier.size(20.dp),
+            )
+            if (hasIndicator) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .size(6.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primary),
+                )
+            }
+        }
         Text(
             text = label,
             style = MaterialTheme.typography.labelSmall,
-            color = tint,
+            color = labelTint,
+            maxLines = 1,
         )
     }
 }
@@ -1204,7 +1243,7 @@ private fun BackgroundAnimationPanel(
     }
 
     Text(
-        text = "アニメーション（画面OFF時は自動停止）",
+        text = "アニメーション",
         style = MaterialTheme.typography.labelMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
@@ -1255,14 +1294,7 @@ private fun ConditionalRulesPanel(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Column {
-                    Text("条件プレビューシミュレーター", style = MaterialTheme.typography.titleSmall)
-                    Text(
-                        "電池残量や時間帯を変えてルール動作を確認",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
+                Text("条件シミュレーター", style = MaterialTheme.typography.titleSmall)
                 Switch(
                     checked = state.simulatorEnabled,
                     onCheckedChange = onSetSimulatorEnabled,
