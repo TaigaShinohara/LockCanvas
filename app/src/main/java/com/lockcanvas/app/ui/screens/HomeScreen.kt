@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -55,6 +56,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -115,7 +117,7 @@ fun HomeScreen(
                         IconButton(onClick = onApplyWallpaperClick) {
                             Icon(
                                 imageVector = Icons.Outlined.Wallpaper,
-                                contentDescription = "壁紙設定を開く",
+                                contentDescription = "壁紙設定",
                             )
                         }
                     }
@@ -233,7 +235,7 @@ private fun WallpaperStatusBanner(
                 imageVector = Icons.Rounded.Smartphone,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(20.dp),
+                modifier = Modifier.size(24.dp),
             )
             Text(
                 text = "ライブ壁紙が未設定です",
@@ -246,6 +248,7 @@ private fun WallpaperStatusBanner(
             FilledTonalButton(
                 onClick = onApplyWallpaperClick,
                 contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
+                modifier = Modifier.heightIn(min = 48.dp),
             ) {
                 Text("設定する")
             }
@@ -268,9 +271,7 @@ private fun DesignThumbnailCard(
     var menuExpanded by remember { mutableStateOf(false) }
 
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
+        modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainer,
@@ -290,7 +291,11 @@ private fun DesignThumbnailCard(
                         .fillMaxWidth()
                         .aspectRatio(9f / 16f)
                         .padding(start = 8.dp, end = 8.dp, top = 8.dp)
-                        .clip(RoundedCornerShape(12.dp)),
+                        .clip(RoundedCornerShape(12.dp))
+                        .clickable(
+                            onClick = onClick,
+                            onClickLabel = "デザインを編集",
+                        ),
                 ) {
                 Canvas(modifier = Modifier.fillMaxSize()) {
                     drawIntoCanvas { canvas ->
@@ -316,7 +321,7 @@ private fun DesignThumbnailCard(
                         color = MaterialTheme.colorScheme.primary,
                     ) {
                         Text(
-                            text = if (isWallpaperActive) "適用中" else "選択中",
+                            text = if (isWallpaperActive) "壁紙に反映中" else "選択中",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
@@ -324,7 +329,6 @@ private fun DesignThumbnailCard(
                     }
                 } else {
                     Surface(
-                        onClick = onSetActive,
                         modifier = Modifier
                             .align(Alignment.TopStart)
                             .padding(6.dp),
@@ -333,7 +337,7 @@ private fun DesignThumbnailCard(
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                     ) {
                         Text(
-                            text = "使う",
+                            text = "未選択",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
@@ -373,8 +377,19 @@ private fun DesignThumbnailCard(
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable(onClick = onClick, onClickLabel = "デザインを編集"),
                 )
+
+                if (!isActive) {
+                    TextButton(
+                        onClick = onSetActive,
+                        modifier = Modifier.minimumInteractiveComponentSize(),
+                    ) {
+                        Text("選ぶ")
+                    }
+                }
 
                 Box {
                     IconButton(
@@ -393,9 +408,9 @@ private fun DesignThumbnailCard(
                         expanded = menuExpanded,
                         onDismissRequest = { menuExpanded = false },
                     ) {
-                        if (!isActive) {
+                        if (!isActive && isWallpaperActive) {
                             DropdownMenuItem(
-                                text = { Text("壁紙に適用") },
+                                text = { Text("壁紙に反映") },
                                 leadingIcon = {
                                     Icon(Icons.Outlined.CheckCircle, contentDescription = null)
                                 },

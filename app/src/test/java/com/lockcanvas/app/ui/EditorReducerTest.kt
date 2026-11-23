@@ -1,6 +1,9 @@
 package com.lockcanvas.app.ui
 
 import com.lockcanvas.app.model.CanvasDesign
+import com.lockcanvas.app.model.ConditionalRule
+import com.lockcanvas.app.model.RuleAction
+import com.lockcanvas.app.model.RuleCondition
 import com.lockcanvas.app.model.ShapeElement
 import com.lockcanvas.app.model.TextElement
 import org.junit.Assert.assertEquals
@@ -93,6 +96,31 @@ class EditorReducerTest {
         // Sending bottom-most element backward is a no-op
         val sentBottom = EditorReducer.sendBackward(sentBack, "el_b")
         assertEquals(sentBack.design, sentBottom.design)
+    }
+
+    @Test
+    fun ruleActionsCanTargetExistingElementsAndCanBeToggledOrDeleted() {
+        val initial = baseState()
+        val rule = ConditionalRule(
+            id = "rule_1",
+            name = "低電力時",
+            enabled = true,
+            condition = RuleCondition.BatteryBelow(thresholdPercent = 20),
+            action = RuleAction.ToggleElementVisibility(
+                elementId = "el_b",
+                visible = false,
+            ),
+        )
+
+        val withRule = EditorReducer.addRule(initial, rule)
+        assertEquals("el_b", (withRule.design.rules.single().action as RuleAction.ToggleElementVisibility).elementId)
+        assertTrue(withRule.hasUnsavedChanges)
+
+        val disabled = EditorReducer.toggleRule(withRule, "rule_1")
+        assertFalse(disabled.design.rules.single().enabled)
+
+        val deleted = EditorReducer.deleteRule(disabled, "rule_1")
+        assertTrue(deleted.design.rules.isEmpty())
     }
 
     @Test

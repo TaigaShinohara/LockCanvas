@@ -103,36 +103,6 @@ fun SettingsInfoScreen(
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("ライブ壁紙ピッカーを開く")
                     }
-
-                    Spacer(modifier = Modifier.height(6.dp))
-
-                    TextButton(
-                        onClick = onReplayOnboarding,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp),
-                    ) {
-                        Text("初回ガイドをもう一度見る")
-                    }
-
-                    TextButton(
-                        onClick = { showResetDialog = true },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp),
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Restore,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.size(18.dp),
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "プリセットを初期状態に戻す",
-                            color = MaterialTheme.colorScheme.error,
-                        )
-                    }
                 }
             }
         },
@@ -145,10 +115,16 @@ fun SettingsInfoScreen(
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState()),
         ) {
+            Text(
+                text = "仕様",
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 4.dp),
+            )
             SpecListItem(
                 icon = Icons.Outlined.Wallpaper,
                 headline = "適用と反映",
-                supporting = "壁紙ピッカーで設定後、エディタの「保存」で即時反映されます",
+                supporting = "エディターで保存すると選択デザインとして反映されます。初回は下のボタンで壁紙に設定してください。",
             )
             HorizontalDivider(
                 modifier = Modifier.padding(horizontal = 16.dp),
@@ -177,6 +153,50 @@ fun SettingsInfoScreen(
                 headline = "省電力設計",
                 supporting = "画面OFF時は描画を完全停止。動きなしでは変化時のみ更新します",
             )
+            HorizontalDivider(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                color = MaterialTheme.colorScheme.outlineVariant,
+            )
+            Text(
+                text = "ヘルプ",
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 4.dp),
+            )
+            TextButton(
+                onClick = onReplayOnboarding,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+                    .padding(horizontal = 16.dp),
+            ) {
+                Text("初回ガイドをもう一度見る")
+            }
+            Text(
+                text = "危険な操作",
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 4.dp),
+            )
+            TextButton(
+                onClick = { showResetDialog = true },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+                    .padding(horizontal = 16.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Restore,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(18.dp),
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "プリセットを初期状態に戻す",
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
         }
     }
 
@@ -184,7 +204,7 @@ fun SettingsInfoScreen(
         AlertDialog(
             onDismissRequest = { showResetDialog = false },
             title = { Text("プリセットを初期化") },
-            text = { Text("保存済みのデザインを初期プリセット3種類に戻しますか？") },
+            text = { Text("保存済みのカスタムデザインは削除され、初期プリセット3種類に戻します。この操作は取り消せません。") },
             confirmButton = {
                 TextButton(
                     onClick = {

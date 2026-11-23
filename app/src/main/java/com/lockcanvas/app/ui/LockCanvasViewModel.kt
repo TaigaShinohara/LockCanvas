@@ -255,12 +255,12 @@ class LockCanvasViewModel(application: Application) : AndroidViewModel(applicati
             val active = WallpaperLauncher.isLockCanvasActive(getApplication())
             _isWallpaperActive.value = active
             if (active) {
-                _snackbarMessages.tryEmit(SnackbarEvent("ロック画面のデザインを切り替えました"))
+                _snackbarMessages.tryEmit(SnackbarEvent("選択デザインを壁紙に反映しました"))
             } else {
                 _snackbarMessages.tryEmit(
                     SnackbarEvent(
-                        message = "デザインを選択しました",
-                        actionLabel = "壁紙に設定",
+                        message = "デザインを選択しました。壁紙は未設定です",
+                        actionLabel = "壁紙設定を開く",
                         openWallpaperPickerOnAction = true,
                     ),
                 )
@@ -301,12 +301,12 @@ class LockCanvasViewModel(application: Application) : AndroidViewModel(applicati
             val active = WallpaperLauncher.isLockCanvasActive(getApplication())
             _isWallpaperActive.value = active
             if (active) {
-                _snackbarMessages.tryEmit(SnackbarEvent("保存してロック画面へ反映しました"))
+                _snackbarMessages.tryEmit(SnackbarEvent("保存しました。壁紙に反映中です"))
             } else {
                 _snackbarMessages.tryEmit(
                     SnackbarEvent(
-                        message = "保存しました",
-                        actionLabel = "ロック画面に設定",
+                        message = "保存しました。ロック画面への設定が必要です",
+                        actionLabel = "壁紙設定を開く",
                         openWallpaperPickerOnAction = true,
                     ),
                 )

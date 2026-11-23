@@ -277,9 +277,15 @@ fun EditorScreen(
                         }
                         if (state.hasUnsavedChanges) {
                             Text(
-                                text = "未保存の変更あり",
+                                text = "保存が必要",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.primary,
+                            )
+                        } else {
+                            Text(
+                                text = "保存済み",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     }
@@ -300,7 +306,11 @@ fun EditorScreen(
                     IconButton(onClick = onToggleSafeAreaGuides) {
                         Icon(
                             imageVector = Icons.Outlined.GridOn,
-                            contentDescription = "セーフエリア表示切替",
+                            contentDescription = if (state.showSafeAreaGuides) {
+                                "時計や通知を避ける案内を隠す"
+                            } else {
+                                "時計や通知を避ける案内を表示"
+                            },
                             tint = if (state.showSafeAreaGuides) {
                                 MaterialTheme.colorScheme.primary
                             } else {
@@ -315,9 +325,9 @@ fun EditorScreen(
                         modifier = Modifier
                             .padding(end = 8.dp)
                             .minimumInteractiveComponentSize()
-                            .heightIn(min = 38.dp),
+                            .heightIn(min = 48.dp),
                     ) {
-                        Text("保存", style = MaterialTheme.typography.labelLarge)
+                        Text("保存して反映", style = MaterialTheme.typography.labelLarge)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -380,21 +390,39 @@ fun EditorScreen(
             // Beginner-friendly 1-line operation hint (when panel is closed)
             if (state.activeTab == null) {
                 val hintText = if (state.selectedElement != null) {
-                    "ドラッグで移動・2本指で拡縮・回転・「編集」で調整"
+                    "選択中です。移動・拡大・回転はキャンバスで操作できます"
                 } else {
                     "タップで選択・ドラッグで移動・「追加」でパーツ追加"
                 }
-                Text(
-                    text = hintText,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 4.dp),
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                )
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = if (state.selectedElement != null) {
+                        Arrangement.spacedBy(8.dp)
+                    } else {
+                        Arrangement.Center
+                    },
+                ) {
+                    Text(
+                        text = hintText,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f),
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    )
+                    if (state.selectedElement != null) {
+                        TextButton(
+                            onClick = { onSelectToolTab(EditorToolTab.EDIT) },
+                            modifier = Modifier.minimumInteractiveComponentSize(),
+                        ) {
+                            Text("編集する")
+                        }
+                    }
+                }
             }
 
             // Expandable Tool Panel above Dock (Progressive Disclosure)
@@ -997,19 +1025,24 @@ private fun ElementInspectorPanel(
                         if (el is TextElement) el.copy(text = newText) else el
                     }
                 },
-                label = { Text("テキスト / 動的テンプレート") },
+                label = { Text("表示する文字") },
                 modifier = Modifier.fillMaxWidth(),
                 maxLines = 3,
             )
 
-            // Dynamic Token Insert Chips
+            // Beginner-friendly automatic text options
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                listOf("{time}", "{date}", "{battery}", "{charging_status}").forEach { token ->
+                listOf(
+                    "{time}" to "現在時刻",
+                    "{date}" to "日付",
+                    "{battery}" to "電池残量",
+                    "{charging_status}" to "充電状態",
+                ).forEach { (token, label) ->
                     FilterChip(
                         selected = element.text.contains(token),
                         onClick = {
@@ -1022,7 +1055,7 @@ private fun ElementInspectorPanel(
                                 }
                             }
                         },
-                        label = { Text(token, style = MaterialTheme.typography.labelSmall) },
+                        label = { Text(label, style = MaterialTheme.typography.labelSmall) },
                     )
                 }
             }
@@ -1422,6 +1455,11 @@ private fun ConditionalRulesPanel(
             Text("ルールを追加")
         }
     }
+    Text(
+        text = "複数のルールが一致した場合は、登録順に結果を重ねます。表示切替や文字変更は最後に一致したルールが優先されます。",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
 
     if (state.design.rules.isEmpty()) {
         Text(
@@ -1463,7 +1501,7 @@ private fun ConditionalRulesPanel(
                             }
                         }
                         Text(
-                            text = "${describeCondition(rule.condition)} → ${describeAction(rule.action)}",
+                            text = "${describeCondition(rule.condition)} のとき、${describeAction(rule.action, state.design.elements)}",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -1474,7 +1512,7 @@ private fun ConditionalRulesPanel(
                     )
                     IconButton(
                         onClick = { onDeleteRule(rule.id) },
-                        modifier = Modifier.size(32.dp),
+                        modifier = Modifier.size(48.dp),
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.DeleteOutline,
@@ -1565,19 +1603,19 @@ private fun LayersPanel(
 
                 IconButton(
                     onClick = { onBringForward(el.id) },
-                    modifier = Modifier.size(30.dp),
+                    modifier = Modifier.size(48.dp),
                 ) {
                     Icon(Icons.Rounded.ArrowUpward, contentDescription = "上へ", modifier = Modifier.size(16.dp))
                 }
                 IconButton(
                     onClick = { onSendBackward(el.id) },
-                    modifier = Modifier.size(30.dp),
+                    modifier = Modifier.size(48.dp),
                 ) {
                     Icon(Icons.Rounded.ArrowDownward, contentDescription = "下へ", modifier = Modifier.size(16.dp))
                 }
                 IconButton(
                     onClick = { onDelete(el.id) },
-                    modifier = Modifier.size(30.dp),
+                    modifier = Modifier.size(48.dp),
                 ) {
                     Icon(
                         Icons.Outlined.DeleteOutline,
@@ -1614,7 +1652,12 @@ private fun AddRuleDialog(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                Text("条件 (IF)", style = MaterialTheme.typography.labelMedium)
+                Text("このとき", style = MaterialTheme.typography.titleSmall)
+                Text(
+                    text = "ひとつの状態を選ぶと、その条件に一致したときだけルールが使われます。",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     FilterChip(
                         selected = conditionType == 0,
@@ -1643,7 +1686,12 @@ private fun AddRuleDialog(
                     )
                 }
 
-                Text("アクション (THEN)", style = MaterialTheme.typography.labelMedium)
+                Text("すると", style = MaterialTheme.typography.titleSmall)
+                Text(
+                    text = "変更したい内容を選びます。対象は下から選べます。",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
                 Row(
                     modifier = Modifier.horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -1683,15 +1731,45 @@ private fun AddRuleDialog(
                         onSelect = { bgColor = it },
                     )
                     1 -> {
+                        if (textElements.isNotEmpty()) {
+                            Text("対象の文字パーツ", style = MaterialTheme.typography.labelMedium)
+                            Row(
+                                modifier = Modifier.horizontalScroll(rememberScrollState()),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            ) {
+                                textElements.forEach { element ->
+                                    FilterChip(
+                                        selected = targetElementId == element.id,
+                                        onClick = { targetElementId = element.id },
+                                        label = { Text(describeElement(element), maxLines = 1) },
+                                    )
+                                }
+                            }
+                        }
                         OutlinedTextField(
                             value = overrideText,
                             onValueChange = { overrideText = it },
-                            label = { Text("置き換えるテキスト") },
+                            label = { Text("表示する文字") },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth(),
                         )
                     }
                     2 -> {
+                        if (elements.isNotEmpty()) {
+                            Text("対象の要素", style = MaterialTheme.typography.labelMedium)
+                            Row(
+                                modifier = Modifier.horizontalScroll(rememberScrollState()),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            ) {
+                                elements.forEach { element ->
+                                    FilterChip(
+                                        selected = targetElementId == element.id,
+                                        onClick = { targetElementId = element.id },
+                                        label = { Text(describeElement(element), maxLines = 1) },
+                                    )
+                                }
+                            }
+                        }
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,
@@ -1765,9 +1843,12 @@ private fun SmallActionChip(
         onClick = onClick,
         shape = RoundedCornerShape(10.dp),
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        modifier = Modifier.heightIn(min = 48.dp),
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            modifier = Modifier
+                .minimumInteractiveComponentSize()
+                .padding(horizontal = 10.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
@@ -1797,7 +1878,9 @@ private fun LabeledSlider(
             value = value.coerceIn(valueRange.start, valueRange.endInclusive),
             onValueChange = onValueChange,
             valueRange = valueRange,
-            modifier = Modifier.height(30.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 48.dp),
         )
     }
 }
@@ -1825,7 +1908,8 @@ private fun ColorSwatchRow(
                 val isSelected = argb == selectedArgb
                 Box(
                     modifier = Modifier
-                        .size(30.dp)
+                        .size(32.dp)
+                        .minimumInteractiveComponentSize()
                         .clip(CircleShape)
                         .background(Color(argb.toInt()))
                         .border(
@@ -1874,8 +1958,15 @@ private fun describeCondition(condition: RuleCondition): String = when (conditio
     is RuleCondition.NightTime -> "夜間(${condition.startHour}時-${condition.endHour}時)"
 }
 
-private fun describeAction(action: RuleAction): String = when (action) {
-    is RuleAction.OverrideBackground -> "背景色変更"
-    is RuleAction.OverrideElementText -> "テキスト変更"
-    is RuleAction.ToggleElementVisibility -> if (action.visible) "要素を表示" else "要素を非表示"
+private fun describeAction(action: RuleAction, elements: List<CanvasElement>): String = when (action) {
+    is RuleAction.OverrideBackground -> "背景色を変更"
+    is RuleAction.OverrideElementText -> {
+        val target = elements.firstOrNull { it.id == action.elementId }
+        if (target == null) "テキストを変更" else "${describeElement(target)}の文字を変更"
+    }
+    is RuleAction.ToggleElementVisibility -> {
+        val target = elements.firstOrNull { it.id == action.elementId }
+        val targetName = target?.let(::describeElement) ?: "要素"
+        if (action.visible) "$targetName を表示" else "$targetName を非表示"
+    }
 }
