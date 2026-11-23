@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">LockCanvas</string>
+    <string name="wallpaper_label">LockCanvas Live Wallpaper</string>
+    <string name="wallpaper_description">Dynamic lock-screen &amp; home-screen canvas powered by live battery, time, and custom rules.</string>
+</resources>
