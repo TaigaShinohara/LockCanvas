@@ -231,7 +231,7 @@ fun OnboardingScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Box(modifier = Modifier.width(80.dp), contentAlignment = Alignment.CenterStart) {
+                Box(modifier = Modifier.width(96.dp), contentAlignment = Alignment.CenterStart) {
                     if (pagerState.currentPage > 0) {
                         IconButton(onClick = { navigateToPage(pagerState.currentPage - 1) }) {
                             Icon(
@@ -249,7 +249,7 @@ fun OnboardingScreen(
                     chapterLabel = currentRole.chapterLabel,
                 )
 
-                Box(modifier = Modifier.width(80.dp), contentAlignment = Alignment.CenterEnd) {
+                Box(modifier = Modifier.width(96.dp), contentAlignment = Alignment.CenterEnd) {
                     if (currentRole != OnboardingPageRole.CONNECT) {
                         TextButton(
                             onClick = {
@@ -261,6 +261,8 @@ fun OnboardingScreen(
                                 text = "スキップ",
                                 style = MaterialTheme.typography.labelLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                softWrap = false,
                             )
                         }
                     }
