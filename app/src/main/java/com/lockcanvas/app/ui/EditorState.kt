@@ -23,8 +23,8 @@ enum class EditorToolTab(val label: String) {
     ADD("追加"),
     EDIT("編集"),
     BACKGROUND("背景/動き"),
-    RULES("条件ルール"),
-    LAYERS("レイヤー"),
+    RULES("自動切替"),
+    LAYERS("重なり順"),
 }
 
 data class SnapResult(

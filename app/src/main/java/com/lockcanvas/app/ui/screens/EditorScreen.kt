@@ -257,12 +257,24 @@ fun EditorScreen(
                             .clickable { showRenameDialog = true }
                             .padding(horizontal = 4.dp, vertical = 2.dp),
                     ) {
-                        Text(
-                            text = state.design.name,
-                            style = MaterialTheme.typography.titleMedium,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            Text(
+                                text = state.design.name,
+                                style = MaterialTheme.typography.titleMedium,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f, fill = false),
+                            )
+                            Icon(
+                                imageVector = Icons.Outlined.Edit,
+                                contentDescription = "名前を変更",
+                                modifier = Modifier.size(14.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                         if (state.hasUnsavedChanges) {
                             Text(
                                 text = "未保存の変更あり",
@@ -646,7 +658,8 @@ private fun InteractiveCanvasStage(
         border = BorderStroke(2.dp, MaterialTheme.colorScheme.outline),
         shadowElevation = 8.dp,
     ) {
-        Canvas(
+        Box(modifier = Modifier.fillMaxSize()) {
+            Canvas(
             modifier = Modifier
                 .fillMaxSize()
                 .onSizeChanged { stageSize = it }
@@ -757,6 +770,24 @@ private fun InteractiveCanvasStage(
                     strokeWidth = 2f,
                     pathEffect = dashEffect,
                 )
+            }
+        }
+
+            if (state.selectedElementId == null) {
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 12.dp, start = 12.dp, end = 12.dp),
+                    shape = RoundedCornerShape(99.dp),
+                    color = Color.Black.copy(alpha = 0.58f),
+                ) {
+                    Text(
+                        text = "ドラッグで移動・2本指で拡大/回転",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White.copy(alpha = 0.9f),
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                    )
+                }
             }
         }
     }

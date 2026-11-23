@@ -4,13 +4,18 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -49,6 +54,15 @@ fun LockCanvasApp(
     val isWallpaperActive by viewModel.isWallpaperActive.collectAsStateWithLifecycle()
 
     val snackbarHostState = remember { SnackbarHostState() }
+    var showWallpaperGuideDialog by remember { mutableStateOf(false) }
+
+    val requestWallpaperPicker: () -> Unit = {
+        if (isWallpaperActive) {
+            viewModel.launchLiveWallpaperPicker()
+        } else {
+            showWallpaperGuideDialog = true
+        }
+    }
 
     LaunchedEffect(viewModel) {
         viewModel.snackbarMessages.collect { event ->
@@ -62,7 +76,7 @@ fun LockCanvasApp(
                 },
             )
             if (result == SnackbarResult.ActionPerformed && event.openWallpaperPickerOnAction) {
-                viewModel.launchLiveWallpaperPicker()
+                requestWallpaperPicker()
             }
         }
     }
@@ -94,7 +108,7 @@ fun LockCanvasApp(
             snapshot = liveSnapshot,
             isWallpaperActive = isWallpaperActive,
             snackbarHostState = snackbarHostState,
-            onApplyWallpaperClick = { viewModel.launchLiveWallpaperPicker() },
+            onApplyWallpaperClick = requestWallpaperPicker,
             onCreateNewClick = { viewModel.createNewDesignAndEdit() },
             onOpenEditor = { design -> viewModel.openEditor(design) },
             onSetActiveDesign = { id -> viewModel.applyDesign(id) },
@@ -149,9 +163,34 @@ fun LockCanvasApp(
         ScreenRoute.SettingsInfo -> SettingsInfoScreen(
             snackbarHostState = snackbarHostState,
             onBack = { viewModel.openHome() },
-            onLaunchWallpaperPicker = { viewModel.launchLiveWallpaperPicker() },
+            onLaunchWallpaperPicker = requestWallpaperPicker,
             onReplayOnboarding = { viewModel.openOnboardingReplay() },
             onResetToPresets = { viewModel.resetToPresets() },
+        )
+    }
+
+    if (showWallpaperGuideDialog) {
+        AlertDialog(
+            onDismissRequest = { showWallpaperGuideDialog = false },
+            title = { Text("ロック画面への設定方法") },
+            text = {
+                Text("次の画面で「壁紙に設定」を押し、「ロック画面」（または「ホームとロック画面」）を選ぶと反映されます。")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showWallpaperGuideDialog = false
+                        viewModel.launchLiveWallpaperPicker()
+                    },
+                ) {
+                    Text("設定画面を開く")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showWallpaperGuideDialog = false }) {
+                    Text("あとで")
+                }
+            },
         )
     }
 }
