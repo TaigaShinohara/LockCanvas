@@ -53,6 +53,7 @@ fun SettingsInfoScreen(
     snackbarHostState: SnackbarHostState,
     onBack: () -> Unit,
     onLaunchWallpaperPicker: () -> Unit,
+    onReplayOnboarding: () -> Unit,
     onResetToPresets: () -> Unit,
 ) {
     var showResetDialog by remember { mutableStateOf(false) }
@@ -103,7 +104,16 @@ fun SettingsInfoScreen(
                         Text("ライブ壁紙ピッカーを開く")
                     }
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    TextButton(
+                        onClick = onReplayOnboarding,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                    ) {
+                        Text("初回ガイドをもう一度見る")
+                    }
 
                     TextButton(
                         onClick = { showResetDialog = true },

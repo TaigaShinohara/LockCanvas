@@ -13,6 +13,7 @@ import java.util.UUID
 import kotlin.math.abs
 
 sealed interface ScreenRoute {
+    data object Onboarding : ScreenRoute
     data object Home : ScreenRoute
     data object Editor : ScreenRoute
     data object SettingsInfo : ScreenRoute

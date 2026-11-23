@@ -17,6 +17,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.lockcanvas.app.ui.LockCanvasViewModel
 import com.lockcanvas.app.ui.ScreenRoute
+import com.lockcanvas.app.ui.onboarding.OnboardingScreen
 import com.lockcanvas.app.ui.screens.EditorScreen
 import com.lockcanvas.app.ui.screens.HomeScreen
 import com.lockcanvas.app.ui.screens.SettingsInfoScreen
@@ -39,6 +40,8 @@ fun LockCanvasApp(
     viewModel: LockCanvasViewModel = viewModel(),
 ) {
     val route by viewModel.route.collectAsStateWithLifecycle()
+    val onboardingChecked by viewModel.onboardingChecked.collectAsStateWithLifecycle()
+    val onboardingGoal by viewModel.onboardingGoal.collectAsStateWithLifecycle()
     val designs by viewModel.designs.collectAsStateWithLifecycle()
     val activeDesignId by viewModel.activeDesignId.collectAsStateWithLifecycle()
     val editorState by viewModel.editorState.collectAsStateWithLifecycle()
@@ -68,7 +71,23 @@ fun LockCanvasApp(
         viewModel.refreshWallpaperStatus()
     }
 
+    if (!onboardingChecked) return
+
     when (route) {
+        ScreenRoute.Onboarding -> OnboardingScreen(
+            initialGoal = onboardingGoal,
+            liveSnapshot = liveSnapshot,
+            onCompleteToEditor = { goal, trySucceeded ->
+                viewModel.completeOnboardingToEditor(goal, trySucceeded)
+            },
+            onTryLater = { goal ->
+                viewModel.completeOnboardingLater(goal, isSkip = false)
+            },
+            onSkip = { goal ->
+                viewModel.completeOnboardingLater(goal, isSkip = true)
+            },
+        )
+
         ScreenRoute.Home -> HomeScreen(
             designs = designs,
             activeDesignId = activeDesignId,
@@ -131,6 +150,7 @@ fun LockCanvasApp(
             snackbarHostState = snackbarHostState,
             onBack = { viewModel.openHome() },
             onLaunchWallpaperPicker = { viewModel.launchLiveWallpaperPicker() },
+            onReplayOnboarding = { viewModel.openOnboardingReplay() },
             onResetToPresets = { viewModel.resetToPresets() },
         )
     }

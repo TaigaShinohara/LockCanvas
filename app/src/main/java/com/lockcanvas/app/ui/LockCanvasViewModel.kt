@@ -23,6 +23,8 @@ import com.lockcanvas.app.model.PresetDesigns
 import com.lockcanvas.app.model.ShapeElement
 import com.lockcanvas.app.model.ShapeType
 import com.lockcanvas.app.model.TextElement
+import com.lockcanvas.app.ui.onboarding.CURRENT_ONBOARDING_VERSION
+import com.lockcanvas.app.ui.onboarding.OnboardingGoal
 import com.lockcanvas.app.wallpaper.WallpaperLauncher
 import java.io.File
 import java.util.UUID
@@ -35,6 +37,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
@@ -67,6 +70,12 @@ class LockCanvasViewModel(application: Application) : AndroidViewModel(applicati
 
     private val _route = MutableStateFlow<ScreenRoute>(ScreenRoute.Home)
     val route: StateFlow<ScreenRoute> = _route.asStateFlow()
+
+    private val _onboardingChecked = MutableStateFlow(false)
+    val onboardingChecked: StateFlow<Boolean> = _onboardingChecked.asStateFlow()
+
+    private val _onboardingGoal = MutableStateFlow(OnboardingGoal.UNDECIDED)
+    val onboardingGoal: StateFlow<OnboardingGoal> = _onboardingGoal.asStateFlow()
 
     private val _editorState = MutableStateFlow(EditorUiState())
     val editorState: StateFlow<EditorUiState> = _editorState.asStateFlow()
@@ -113,6 +122,15 @@ class LockCanvasViewModel(application: Application) : AndroidViewModel(applicati
             receiverRegistered = true
         }
         viewModelScope.launch {
+            val completedVersion = repository.onboardingCompletedVersionFlow.first()
+            val savedGoal = OnboardingGoal.fromKey(repository.onboardingGoalKeyFlow.first())
+            _onboardingGoal.value = savedGoal
+            if (completedVersion < CURRENT_ONBOARDING_VERSION) {
+                _route.value = ScreenRoute.Onboarding
+            }
+            _onboardingChecked.value = true
+        }
+        viewModelScope.launch {
             while (isActive) {
                 _liveSnapshot.value = readSystemSnapshot()
                 delay(30_000L)
@@ -140,6 +158,42 @@ class LockCanvasViewModel(application: Application) : AndroidViewModel(applicati
 
     fun openSettingsInfo() {
         _route.value = ScreenRoute.SettingsInfo
+    }
+
+    fun openOnboardingReplay() {
+        _route.value = ScreenRoute.Onboarding
+    }
+
+    fun completeOnboardingToEditor(goal: OnboardingGoal, trySucceeded: Boolean) {
+        _onboardingGoal.value = goal
+        viewModelScope.launch {
+            repository.saveOnboardingCompleted(
+                version = CURRENT_ONBOARDING_VERSION,
+                goalKey = goal.storageKey,
+                firstSuccessAchieved = trySucceeded,
+            )
+            val allDesigns = repository.designsFlow.first()
+            val recommended = allDesigns.firstOrNull { it.id == goal.recommendedPresetId }
+                ?: allDesigns.firstOrNull()
+                ?: PresetDesigns.defaultDesign()
+            repository.setActiveDesign(recommended.id)
+            openEditor(recommended)
+        }
+    }
+
+    fun completeOnboardingLater(goal: OnboardingGoal, isSkip: Boolean) {
+        _onboardingGoal.value = goal
+        viewModelScope.launch {
+            repository.saveOnboardingCompleted(
+                version = CURRENT_ONBOARDING_VERSION,
+                goalKey = goal.storageKey,
+                firstSuccessAchieved = false,
+            )
+            openHome()
+            if (!isSkip) {
+                _snackbarMessages.tryEmit(SnackbarEvent("あとで、エディターからいつでも試せます"))
+            }
+        }
     }
 
     fun openEditor(design: CanvasDesign) {
@@ -242,6 +296,7 @@ class LockCanvasViewModel(application: Application) : AndroidViewModel(applicati
         viewModelScope.launch {
             repository.saveDesign(current)
             repository.setActiveDesign(current.id)
+            repository.markFirstSuccessAchieved()
             _editorState.update { it.copy(hasUnsavedChanges = false) }
             val active = WallpaperLauncher.isLockCanvasActive(getApplication())
             _isWallpaperActive.value = active

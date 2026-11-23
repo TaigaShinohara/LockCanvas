@@ -3,8 +3,10 @@ package com.lockcanvas.app.data
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.lockcanvas.app.model.CanvasDesign
@@ -55,6 +57,38 @@ class DesignRepository(context: Context) {
             designs.firstOrNull { it.id == activeId } ?: designs.first()
         }
         .distinctUntilChanged()
+
+    val onboardingCompletedVersionFlow: Flow<Int> = safePreferencesFlow
+        .map { prefs -> prefs[ONBOARDING_COMPLETED_VERSION_KEY] ?: 0 }
+        .distinctUntilChanged()
+
+    val onboardingGoalKeyFlow: Flow<String?> = safePreferencesFlow
+        .map { prefs -> prefs[ONBOARDING_GOAL_KEY] }
+        .distinctUntilChanged()
+
+    val firstSuccessAchievedFlow: Flow<Boolean> = safePreferencesFlow
+        .map { prefs -> prefs[FIRST_SUCCESS_ACHIEVED_KEY] ?: false }
+        .distinctUntilChanged()
+
+    suspend fun saveOnboardingCompleted(
+        version: Int,
+        goalKey: String,
+        firstSuccessAchieved: Boolean,
+    ) {
+        dataStore.edit { prefs ->
+            prefs[ONBOARDING_COMPLETED_VERSION_KEY] = version
+            prefs[ONBOARDING_GOAL_KEY] = goalKey
+            if (firstSuccessAchieved) {
+                prefs[FIRST_SUCCESS_ACHIEVED_KEY] = true
+            }
+        }
+    }
+
+    suspend fun markFirstSuccessAchieved() {
+        dataStore.edit { prefs ->
+            prefs[FIRST_SUCCESS_ACHIEVED_KEY] = true
+        }
+    }
 
     suspend fun saveDesign(design: CanvasDesign) {
         val stamped = design.copy(updatedAtEpochMs = System.currentTimeMillis())
@@ -136,6 +170,9 @@ class DesignRepository(context: Context) {
     companion object {
         private val DESIGNS_JSON_KEY = stringPreferencesKey("designs_json")
         private val ACTIVE_DESIGN_ID_KEY = stringPreferencesKey("active_design_id")
+        private val ONBOARDING_COMPLETED_VERSION_KEY = intPreferencesKey("onboarding_completed_version")
+        private val ONBOARDING_GOAL_KEY = stringPreferencesKey("onboarding_goal_key")
+        private val FIRST_SUCCESS_ACHIEVED_KEY = booleanPreferencesKey("first_success_achieved")
 
         @Volatile
         private var instance: DesignRepository? = null
