@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -238,6 +239,7 @@ fun EditorScreen(
     BackHandler(onBack = handleBackRequest)
 
     Scaffold(
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             TopAppBar(
                 navigationIcon = {
@@ -311,21 +313,25 @@ fun EditorScreen(
                 ),
             )
         },
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+        snackbarHost = {
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier.navigationBarsPadding(),
+            )
+        },
         containerColor = MaterialTheme.colorScheme.background,
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
-                .navigationBarsPadding(),
+                .padding(innerPadding),
         ) {
             // Center Interactive Phone Preview
             Box(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                    .padding(horizontal = 12.dp, vertical = 4.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 InteractiveCanvasStage(
@@ -357,6 +363,26 @@ fun EditorScreen(
                         )
                     }
                 }
+            }
+
+            // Beginner-friendly 1-line operation hint (when panel is closed)
+            if (state.activeTab == null) {
+                val hintText = if (state.selectedElement != null) {
+                    "ドラッグで移動・2本指で拡縮・回転・「編集」で調整"
+                } else {
+                    "タップで選択・ドラッグで移動・「追加」でパーツ追加"
+                }
+                Text(
+                    text = hintText,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                )
             }
 
             // Expandable Tool Panel above Dock (Progressive Disclosure)
@@ -468,15 +494,16 @@ fun EditorScreen(
                 }
             }
 
-            // Bottom Tool Dock
+            // Bottom Tool Dock (Edge-to-Edge to screen bottom, zero black gap)
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                color = MaterialTheme.colorScheme.surface,
-                tonalElevation = 3.dp,
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .navigationBarsPadding()
                         .padding(horizontal = 6.dp, vertical = 6.dp),
                     horizontalArrangement = Arrangement.SpaceAround,
                     verticalAlignment = Alignment.CenterVertically,

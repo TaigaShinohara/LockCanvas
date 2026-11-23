@@ -3,9 +3,11 @@ package com.lockcanvas.app.ui.screens
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -30,6 +32,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -57,6 +60,7 @@ fun SettingsInfoScreen(
     BackHandler(onBack = onBack)
 
     Scaffold(
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             TopAppBar(
                 title = { Text("設定と仕様", style = MaterialTheme.typography.titleLarge) },
@@ -72,6 +76,55 @@ fun SettingsInfoScreen(
                     containerColor = MaterialTheme.colorScheme.background,
                 ),
             )
+        },
+        bottomBar = {
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .navigationBarsPadding()
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                ) {
+                    FilledTonalButton(
+                        onClick = onLaunchWallpaperPicker,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Wallpaper,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("ライブ壁紙ピッカーを開く")
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    TextButton(
+                        onClick = { showResetDialog = true },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Restore,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "プリセットを初期状態に戻す",
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
+                }
+            }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         containerColor = MaterialTheme.colorScheme.background,
@@ -114,52 +167,6 @@ fun SettingsInfoScreen(
                 headline = "省電力設計",
                 supporting = "画面OFF時は描画を完全停止。動きなしでは変化時のみ更新します",
             )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-            ) {
-                FilledTonalButton(
-                    onClick = onLaunchWallpaperPicker,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp),
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Wallpaper,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp),
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("ライブ壁紙ピッカーを開く")
-                }
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                TextButton(
-                    onClick = { showResetDialog = true },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp),
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Restore,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.size(18.dp),
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "プリセットを初期状態に戻す",
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 

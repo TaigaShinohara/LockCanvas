@@ -16,7 +16,7 @@ object PresetDesigns {
 
     fun minimalClockAndBattery(): CanvasDesign = CanvasDesign(
         id = ID_MINIMAL_CLOCK,
-        name = "ミニマル時計＆電池",
+        name = "ミニマル時計",
         backgroundColorArgb = 0xFF0B1020,
         secondaryBackgroundColorArgb = 0xFF19243E,
         backgroundGradientEnabled = true,
@@ -192,7 +192,7 @@ object PresetDesigns {
 
     fun nightZenCanvas(): CanvasDesign = CanvasDesign(
         id = ID_NIGHT_ZEN,
-        name = "ナイト禅キャンバス",
+        name = "ナイト禅",
         backgroundColorArgb = 0xFF0D1412,
         secondaryBackgroundColorArgb = 0xFF1A2A26,
         backgroundGradientEnabled = true,

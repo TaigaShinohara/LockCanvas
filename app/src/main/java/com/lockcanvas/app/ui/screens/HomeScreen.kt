@@ -10,10 +10,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -95,16 +98,17 @@ fun HomeScreen(
 
     var pendingDeleteDesign by remember { mutableStateOf<CanvasDesign?>(null) }
 
+    val navBarBottomPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+
     Scaffold(
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             TopAppBar(
                 title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = "LockCanvas",
-                            style = MaterialTheme.typography.titleLarge,
-                        )
-                    }
+                    Text(
+                        text = "LockCanvas",
+                        style = MaterialTheme.typography.titleLarge,
+                    )
                 },
                 actions = {
                     if (isWallpaperActive) {
@@ -114,6 +118,12 @@ fun HomeScreen(
                                 contentDescription = "壁紙設定を開く",
                             )
                         }
+                    }
+                    IconButton(onClick = onCreateNewClick) {
+                        Icon(
+                            imageVector = Icons.Rounded.Add,
+                            contentDescription = "新規デザインを作成",
+                        )
                     }
                     IconButton(onClick = onOpenSettingsInfo) {
                         Icon(
@@ -127,21 +137,12 @@ fun HomeScreen(
                 ),
             )
         },
-        floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = onCreateNewClick,
-                icon = {
-                    Icon(
-                        imageVector = Icons.Rounded.Add,
-                        contentDescription = null,
-                    )
-                },
-                text = { Text("新規デザイン") },
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
+        snackbarHost = {
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier.padding(bottom = navBarBottomPadding),
             )
         },
-        snackbarHost = { SnackbarHost(snackbarHostState) },
         containerColor = MaterialTheme.colorScheme.background,
     ) { innerPadding ->
         LazyVerticalGrid(
@@ -152,11 +153,11 @@ fun HomeScreen(
             contentPadding = PaddingValues(
                 start = 16.dp,
                 end = 16.dp,
-                top = 8.dp,
-                bottom = 96.dp,
+                top = 4.dp,
+                bottom = navBarBottomPadding + 16.dp,
             ),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             if (!isWallpaperActive) {
                 item(span = { GridItemSpan(2) }) {
@@ -179,6 +180,10 @@ fun HomeScreen(
                     onDuplicate = { onDuplicateDesign(design.id) },
                     onDelete = { pendingDeleteDesign = design },
                 )
+            }
+
+            item(key = "create_new_design_card") {
+                CreateDesignCard(onClick = onCreateNewClick)
             }
         }
     }
@@ -280,13 +285,13 @@ private fun DesignThumbnailCard(
         ),
     ) {
         Column {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(9f / 16f)
-                    .padding(8.dp)
-                    .clip(RoundedCornerShape(12.dp)),
-            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(9f / 16f)
+                        .padding(start = 8.dp, end = 8.dp, top = 8.dp)
+                        .clip(RoundedCornerShape(12.dp)),
+                ) {
                 Canvas(modifier = Modifier.fillMaxSize()) {
                     drawIntoCanvas { canvas ->
                         renderer.drawScene(
@@ -411,6 +416,75 @@ private fun DesignThumbnailCard(
                         )
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CreateDesignCard(
+    onClick: () -> Unit,
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        ),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.65f)),
+    ) {
+        Column {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(9f / 16f)
+                    .padding(start = 8.dp, end = 8.dp, top = 8.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.surfaceContainer),
+                contentAlignment = Alignment.Center,
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(52.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primaryContainer),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Add,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.size(28.dp),
+                        )
+                    }
+                    Text(
+                        text = "新しく作る",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp)
+                    .padding(horizontal = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "新規キャンバス",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
             }
         }
     }
