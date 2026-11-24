@@ -4,27 +4,27 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Minimalist lock frame / canvas glyph -->
+    <!-- Provisional icon (2026-11-24): bold lock-canvas glyph matching icon_master_1024.png -->
     <path
         android:fillColor="#00000000"
         android:pathData="M34,36 L74,36 A8,8 0 0,1 82,44 L82,72 A8,8 0 0,1 74,80 L34,80 A8,8 0 0,1 26,72 L26,44 A8,8 0 0,1 34,36 Z"
-        android:strokeWidth="4.5"
+        android:strokeWidth="6"
         android:strokeColor="#64D2FF" />
     <!-- Lock shackle -->
     <path
         android:fillColor="#00000000"
         android:pathData="M42,36 L42,29 A12,12 0 0,1 66,29 L66,36"
-        android:strokeWidth="4.5"
+        android:strokeWidth="6"
         android:strokeColor="#A5B4FC"
         android:strokeLineCap="round" />
-    <!-- Dynamic canvas bar inside -->
+    <!-- Dynamic canvas bars inside (bold, as in the raster master) -->
     <path
         android:fillColor="#64D2FF"
-        android:pathData="M38,54 L62,54 A3,3 0 0,1 62,60 L38,60 A3,3 0 0,1 38,54 Z" />
+        android:pathData="M38,48 L70,48 A4,4 0 0,1 70,60 L38,60 A4,4 0 0,1 38,48 Z" />
     <path
         android:fillColor="#A5B4FC"
-        android:pathData="M38,65 L52,65 A2.5,2.5 0 0,1 52,70 L38,70 A2.5,2.5 0 0,1 38,65 Z" />
+        android:pathData="M38,64 L70,64 A4,4 0 0,1 70,74 L38,74 A4,4 0 0,1 38,64 Z" />
     <path
         android:fillColor="#34D399"
-        android:pathData="M68,62 A4,4 0 1,0 68,54 A4,4 0 1,0 68,62 Z" />
+        android:pathData="M65,73 A4,4 0 1,0 65,65 A4,4 0 1,0 65,73 Z" />
 </vector>
