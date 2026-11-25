@@ -2,7 +2,7 @@ package com.lockcanvas.app.ui.onboarding
 
 import com.lockcanvas.app.model.PresetDesigns
 
-const val CURRENT_ONBOARDING_VERSION = 1
+const val CURRENT_ONBOARDING_VERSION = 2
 
 enum class OnboardingGoal(
     val storageKey: String,
@@ -18,7 +18,7 @@ enum class OnboardingGoal(
         echoPhrase = "自分好みに自由に配置したいあなたには",
         matchStrength = "ドラッグと2本指操作で、ロック画面の好きな場所へ思い通りに置けます。",
         recommendedPresetId = PresetDesigns.ID_MINIMAL_CLOCK,
-        ctaSubtitle = "「ミニマル時計」をエディターで開きます",
+        ctaSubtitle = "「ミニマル時計」を、そのままロック画面に設定します",
     ),
     DYNAMIC_INFO(
         storageKey = "dynamic_info",
@@ -26,7 +26,7 @@ enum class OnboardingGoal(
         echoPhrase = "電池や時刻をかっこよく見たいあなたには",
         matchStrength = "バッテリー残量や充電状態に応じて、リアルタイムに表情が変わります。",
         recommendedPresetId = PresetDesigns.ID_CYBER_NEON,
-        ctaSubtitle = "「サイバーネオン」をエディターで開きます",
+        ctaSubtitle = "「サイバーネオン」を、そのままロック画面に設定します",
     ),
     UNDECIDED(
         storageKey = "undecided",
@@ -34,7 +34,7 @@ enum class OnboardingGoal(
         echoPhrase = "まずは気軽に試してみたいあなたには",
         matchStrength = "用意されたテンプレートを少し動かすだけで、雰囲気の違いをすぐ体感できます。",
         recommendedPresetId = PresetDesigns.ID_NIGHT_ZEN,
-        ctaSubtitle = "「ナイト禅」をエディターで開きます",
+        ctaSubtitle = "「ナイト禅」を、そのままロック画面に設定します",
     ),
     ;
 
@@ -48,15 +48,10 @@ enum class OnboardingPageRole(val chapterLabel: String) {
     HOOK("はじめに"),
     GOAL_CHOICE("あなたの希望"),
     MATCH_RESULT("おすすめの理由"),
-    IDENTITY("LockCanvasとは"),
-    VALUE_DYNAMIC("リアルタイム表示"),
+    VALUE_DYNAMIC("今の状態で変わる表示"),
     VALUE_SAFE_AREA("きれいな配置"),
-    STEP_1("使い方 ステップ1"),
-    STEP_2("使い方 ステップ2"),
-    STEP_3("使い方 ステップ3"),
     TRY_DRAG("かんたん体験"),
-    TRY_RESULT("体験の結果"),
-    CONNECT("はじめる準備"),
+    CONNECT("ロック画面に設定"),
 }
 
 data class OnboardingState(
@@ -70,29 +65,20 @@ data class OnboardingState(
 
 object OnboardingPageOrder {
     fun buildPages(goal: OnboardingGoal): List<OnboardingPageRole> {
-        val valuePages = when (goal) {
-            OnboardingGoal.FREE_LAYOUT -> listOf(
-                OnboardingPageRole.VALUE_SAFE_AREA,
-                OnboardingPageRole.VALUE_DYNAMIC,
-            )
+        // Short path to the first success (= setting the lock screen wallpaper):
+        // hook -> goal -> recommendation -> one value page -> try dragging -> set wallpaper.
+        val valuePage = when (goal) {
+            OnboardingGoal.FREE_LAYOUT -> OnboardingPageRole.VALUE_SAFE_AREA
             OnboardingGoal.DYNAMIC_INFO,
             OnboardingGoal.UNDECIDED,
-            -> listOf(
-                OnboardingPageRole.VALUE_DYNAMIC,
-                OnboardingPageRole.VALUE_SAFE_AREA,
-            )
+            -> OnboardingPageRole.VALUE_DYNAMIC
         }
         return listOf(
             OnboardingPageRole.HOOK,
             OnboardingPageRole.GOAL_CHOICE,
             OnboardingPageRole.MATCH_RESULT,
-            OnboardingPageRole.IDENTITY,
-        ) + valuePages + listOf(
-            OnboardingPageRole.STEP_1,
-            OnboardingPageRole.STEP_2,
-            OnboardingPageRole.STEP_3,
+            valuePage,
             OnboardingPageRole.TRY_DRAG,
-            OnboardingPageRole.TRY_RESULT,
             OnboardingPageRole.CONNECT,
         )
     }

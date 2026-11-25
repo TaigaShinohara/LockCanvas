@@ -128,7 +128,7 @@ fun HomeScreen(
                     IconButton(onClick = onOpenSettingsInfo) {
                         Icon(
                             imageVector = Icons.Outlined.Info,
-                            contentDescription = "設定と仕様",
+                            contentDescription = "設定とアプリについて",
                         )
                     }
                 },
@@ -222,32 +222,39 @@ private fun WallpaperStatusBanner(
         color = MaterialTheme.colorScheme.surfaceContainer,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                .padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            Icon(
-                imageVector = Icons.Rounded.Smartphone,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(20.dp),
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Smartphone,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp),
+                )
+                Text(
+                    text = "まだロック画面に設定されていません",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+            }
             Text(
-                text = "ライブ壁紙が未設定です",
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.weight(1f),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+                text = "デザインを「選択中」にするだけでは、ロック画面には映りません。下のボタンから1回だけ設定してください。",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             FilledTonalButton(
                 onClick = onApplyWallpaperClick,
-                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
+                modifier = Modifier.align(Alignment.End),
             ) {
-                Text("設定する")
+                Text("ロック画面に設定する")
             }
         }
     }
@@ -316,7 +323,7 @@ private fun DesignThumbnailCard(
                         color = MaterialTheme.colorScheme.primary,
                     ) {
                         Text(
-                            text = if (isWallpaperActive) "適用中" else "選択中",
+                            text = if (isWallpaperActive) "設定済み" else "選択中",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
@@ -333,10 +340,10 @@ private fun DesignThumbnailCard(
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                     ) {
                         Text(
-                            text = "使う",
-                            style = MaterialTheme.typography.labelSmall,
+                            text = "選択する",
+                            style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 11.dp),
                         )
                     }
                 }
@@ -395,7 +402,7 @@ private fun DesignThumbnailCard(
                     ) {
                         if (!isActive) {
                             DropdownMenuItem(
-                                text = { Text("壁紙に適用") },
+                                text = { Text("選択する") },
                                 leadingIcon = {
                                     Icon(Icons.Outlined.CheckCircle, contentDescription = null)
                                 },

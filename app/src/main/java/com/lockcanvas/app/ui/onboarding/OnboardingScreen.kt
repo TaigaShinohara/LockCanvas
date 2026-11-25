@@ -95,7 +95,7 @@ import kotlinx.coroutines.launch
 fun OnboardingScreen(
     initialGoal: OnboardingGoal,
     liveSnapshot: DynamicDataSnapshot,
-    onCompleteToEditor: (OnboardingGoal, Boolean) -> Unit,
+    onCompleteToWallpaper: (OnboardingGoal) -> Unit,
     onTryLater: (OnboardingGoal) -> Unit,
     onSkip: (OnboardingGoal) -> Unit,
 ) {
@@ -204,7 +204,7 @@ fun OnboardingScreen(
         activePraise = praiseRotator.nextCompletionPraise()
         scope.launch {
             delay(650L)
-            onCompleteToEditor(selectedGoal, trySucceeded)
+            onCompleteToWallpaper(selectedGoal)
         }
     }
 
@@ -283,21 +283,6 @@ fun OnboardingScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .let { mod ->
-                            if (role != OnboardingPageRole.GOAL_CHOICE &&
-                                role != OnboardingPageRole.TRY_DRAG &&
-                                role != OnboardingPageRole.CONNECT
-                            ) {
-                                mod.clickable {
-                                    view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                                    navigateToPage(pageIndex + 1)
-                                }
-                            } else if (pendingAutoAdvanceJob != null) {
-                                mod.clickable { navigateToPage(pageIndex + 1) }
-                            } else {
-                                mod
-                            }
-                        }
                         .padding(horizontal = 24.dp),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -319,11 +304,6 @@ fun OnboardingScreen(
                             renderer = renderer,
                             snapshot = liveSnapshot,
                         )
-                        OnboardingPageRole.IDENTITY -> IdentityPage(
-                            renderer = renderer,
-                            snapshot = liveSnapshot,
-                            goal = selectedGoal,
-                        )
                         OnboardingPageRole.VALUE_DYNAMIC -> ValueDynamicPage(
                             renderer = renderer,
                             snapshot = liveSnapshot,
@@ -334,15 +314,6 @@ fun OnboardingScreen(
                             renderer = renderer,
                             snapshot = liveSnapshot,
                         )
-                        OnboardingPageRole.STEP_1 -> Step1Page(
-                            isCurrentPage = isCurrentPage,
-                            reducedMotion = reducedMotion,
-                        )
-                        OnboardingPageRole.STEP_2 -> Step2Page(
-                            isCurrentPage = isCurrentPage,
-                            reducedMotion = reducedMotion,
-                        )
-                        OnboardingPageRole.STEP_3 -> Step3Page()
                         OnboardingPageRole.TRY_DRAG -> TryDragPage(
                             offsetX = tryDragOffsetX,
                             offsetY = tryDragOffsetY,
@@ -358,12 +329,6 @@ fun OnboardingScreen(
                                     triggerTrySuccess()
                                 }
                             },
-                        )
-                        OnboardingPageRole.TRY_RESULT -> TryResultPage(
-                            offsetX = tryDragOffsetX,
-                            offsetY = tryDragOffsetY,
-                            isCurrentPage = isCurrentPage,
-                            reducedMotion = reducedMotion,
                         )
                         OnboardingPageRole.CONNECT -> ConnectPage(
                             goal = selectedGoal,
@@ -444,7 +409,7 @@ fun OnboardingScreen(
                                 shape = RoundedCornerShape(14.dp),
                             ) {
                                 Text(
-                                    text = "デザインを編集してみる",
+                                    text = "このデザインをロック画面に設定する",
                                     style = MaterialTheme.typography.labelLarge,
                                 )
                             }
@@ -774,43 +739,6 @@ private fun MatchResultPage(
 }
 
 @Composable
-private fun IdentityPage(
-    renderer: CanvasSceneRenderer,
-    snapshot: DynamicDataSnapshot,
-    goal: OnboardingGoal,
-) {
-    val design = remember(goal) {
-        PresetDesigns.all().firstOrNull { it.id == goal.recommendedPresetId }
-            ?: PresetDesigns.defaultDesign()
-    }
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(20.dp),
-    ) {
-        MiniCanvasPreview(
-            design = design,
-            snapshot = snapshot,
-            renderer = renderer,
-            showSafeAreaGuides = false,
-            heightDp = 260,
-        )
-        Text(
-            text = "ロック画面を、自由なキャンバスに",
-            style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.onBackground,
-            textAlign = TextAlign.Center,
-        )
-        Text(
-            text = "文字も画像もバッテリーゲージも、好きな場所へ配置できるライブ壁紙アプリです。",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
-    }
-}
-
-@Composable
 private fun ValueDynamicPage(
     renderer: CanvasSceneRenderer,
     snapshot: DynamicDataSnapshot,
@@ -890,214 +818,6 @@ private fun ValueSafeAreaPage(
         )
         Text(
             text = "セーフエリアガイドを見ながら、ロック画面の見やすい位置へ配置できます。",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
-    }
-}
-
-@Composable
-private fun Step1Page(
-    isCurrentPage: Boolean,
-    reducedMotion: Boolean,
-) {
-    val alpha by animateFloatAsState(
-        targetValue = if (isCurrentPage) 1f else 0.4f,
-        animationSpec = tween(if (reducedMotion) 100 else 320),
-        label = "step1Alpha",
-    )
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .alpha(alpha),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(20.dp),
-    ) {
-        StepBadge("ステップ 1 / 3")
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            listOf("ミニマル時計", "サイバーネオン", "ナイト禅").forEachIndexed { idx, name ->
-                Surface(
-                    modifier = Modifier
-                        .width(86.dp)
-                        .height(132.dp),
-                    shape = RoundedCornerShape(14.dp),
-                    color = if (idx == 0) {
-                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.65f)
-                    } else {
-                        MaterialTheme.colorScheme.surfaceContainer
-                    },
-                    border = BorderStroke(
-                        1.dp,
-                        if (idx == 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
-                    ),
-                ) {
-                    Column(
-                        modifier = Modifier.padding(8.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center,
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.GridView,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(24.dp),
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = name,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            textAlign = TextAlign.Center,
-                        )
-                    }
-                }
-            }
-        }
-        Text(
-            text = "1. ベースのデザインを選ぶ",
-            style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.onBackground,
-            textAlign = TextAlign.Center,
-        )
-        Text(
-            text = "まずはテンプレートから選ぶだけで、すぐに編集を始められます。",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
-    }
-}
-
-@Composable
-private fun Step2Page(
-    isCurrentPage: Boolean,
-    reducedMotion: Boolean,
-) {
-    val shiftX = remember { Animatable(-28f) }
-    LaunchedEffect(isCurrentPage, reducedMotion) {
-        if (!isCurrentPage || reducedMotion) {
-            shiftX.snapTo(0f)
-            return@LaunchedEffect
-        }
-        shiftX.snapTo(-28f)
-        delay(220L)
-        shiftX.animateTo(0f, tween(durationMillis = 500, easing = FastOutSlowInEasing))
-    }
-
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(20.dp),
-    ) {
-        StepBadge("ステップ 2 / 3")
-        Surface(
-            modifier = Modifier
-                .width(196.dp)
-                .height(140.dp),
-            shape = RoundedCornerShape(20.dp),
-            color = MaterialTheme.colorScheme.surfaceContainer,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Surface(
-                    modifier = Modifier.offset { IntOffset(shiftX.value.roundToInt(), 0) },
-                    shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary),
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.TouchApp,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp),
-                        )
-                        Text(
-                            text = "12:00",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        )
-                    }
-                }
-            }
-        }
-        Text(
-            text = "2. 指で動かして、色やサイズを整える",
-            style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.onBackground,
-            textAlign = TextAlign.Center,
-        )
-        Text(
-            text = "ドラッグで移動、2本指で拡縮・回転。真ん中でピタッと揃います。",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
-    }
-}
-
-@Composable
-private fun Step3Page() {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(20.dp),
-    ) {
-        StepBadge("ステップ 3 / 3")
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            Surface(
-                modifier = Modifier.size(72.dp),
-                shape = RoundedCornerShape(18.dp),
-                color = MaterialTheme.colorScheme.primaryContainer,
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = Icons.Outlined.Save,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.size(32.dp),
-                    )
-                }
-            }
-            Text(
-                text = "→",
-                style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.primary,
-            )
-            Surface(
-                modifier = Modifier.size(72.dp),
-                shape = RoundedCornerShape(18.dp),
-                color = MaterialTheme.colorScheme.secondaryContainer,
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = Icons.Outlined.Wallpaper,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                        modifier = Modifier.size(32.dp),
-                    )
-                }
-            }
-        }
-        Text(
-            text = "3. 保存して、ロック画面に設定する",
-            style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.onBackground,
-            textAlign = TextAlign.Center,
-        )
-        Text(
-            text = "一度ライブ壁紙に設定すれば、次からは保存するだけで即時反映されます。",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
@@ -1205,76 +925,6 @@ private fun TryDragPage(
 }
 
 @Composable
-private fun TryResultPage(
-    offsetX: Float,
-    offsetY: Float,
-    isCurrentPage: Boolean,
-    reducedMotion: Boolean,
-) {
-    val alpha by animateFloatAsState(
-        targetValue = if (isCurrentPage) 1f else 0.4f,
-        animationSpec = tween(if (reducedMotion) 100 else 300),
-        label = "tryResultAlpha",
-    )
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .alpha(alpha),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(20.dp),
-    ) {
-        Surface(
-            modifier = Modifier
-                .width(180.dp)
-                .height(220.dp),
-            shape = RoundedCornerShape(24.dp),
-            color = MaterialTheme.colorScheme.surfaceContainer,
-            border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary),
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Surface(
-                    modifier = Modifier.offset {
-                        IntOffset((offsetX * 0.45f).roundToInt(), (offsetY * 0.45f).roundToInt())
-                    },
-                    shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.AutoAwesome,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(16.dp),
-                        )
-                        Text(
-                            text = "配置完了",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        )
-                    }
-                }
-            }
-        }
-        Text(
-            text = "思い通りに動かせましたね",
-            style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.onBackground,
-            textAlign = TextAlign.Center,
-        )
-        Text(
-            text = "あなたのロック画面は、もう自由に変えられます。",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
-    }
-}
-
-@Composable
 private fun ConnectPage(
     goal: OnboardingGoal,
     renderer: CanvasSceneRenderer,
@@ -1308,13 +958,13 @@ private fun ConnectPage(
             heightDp = 240,
         )
         Text(
-            text = "さあ、最初の1枚を仕上げよう",
+            text = "さあ、ロック画面に設定しよう",
             style = MaterialTheme.typography.headlineSmall,
             color = MaterialTheme.colorScheme.onBackground,
             textAlign = TextAlign.Center,
         )
         Text(
-            text = praiseText ?: "選んだスタイルをベースに、そのまま編集を始められます。",
+            text = praiseText ?: "選んだデザインを、そのままあなたのロック画面に設定します。次の画面で案内します。",
             style = MaterialTheme.typography.bodyMedium,
             color = if (praiseText != null) {
                 MaterialTheme.colorScheme.primary
@@ -1322,21 +972,6 @@ private fun ConnectPage(
                 MaterialTheme.colorScheme.onSurfaceVariant
             },
             textAlign = TextAlign.Center,
-        )
-    }
-}
-
-@Composable
-private fun StepBadge(text: String) {
-    Surface(
-        shape = RoundedCornerShape(99.dp),
-        color = MaterialTheme.colorScheme.secondaryContainer,
-    ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSecondaryContainer,
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
         )
     }
 }

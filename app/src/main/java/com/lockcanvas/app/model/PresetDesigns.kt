@@ -85,7 +85,7 @@ object PresetDesigns {
         rules = listOf(
             ConditionalRule(
                 id = "min_rule_low_battery",
-                name = "Low Battery Warning",
+                name = "電池が少ないとき知らせる",
                 enabled = true,
                 condition = RuleCondition.BatteryBelow(thresholdPercent = 20),
                 action = RuleAction.OverrideElementText(
@@ -95,7 +95,7 @@ object PresetDesigns {
             ),
             ConditionalRule(
                 id = "min_rule_low_bg",
-                name = "Low Battery Deep Red Tint",
+                name = "電池が少ないとき背景を赤く",
                 enabled = true,
                 condition = RuleCondition.BatteryBelow(thresholdPercent = 15),
                 action = RuleAction.OverrideBackground(colorArgb = 0xFF2B0E17),
@@ -178,7 +178,7 @@ object PresetDesigns {
         rules = listOf(
             ConditionalRule(
                 id = "cyber_rule_charging_badge",
-                name = "Show Charging Banner",
+                name = "充電中にバナーを出す",
                 enabled = true,
                 condition = RuleCondition.IsCharging,
                 action = RuleAction.ToggleElementVisibility(
@@ -250,14 +250,14 @@ object PresetDesigns {
         rules = listOf(
             ConditionalRule(
                 id = "zen_rule_night_bg",
-                name = "Deepen Background at Night",
+                name = "夜は背景を暗く",
                 enabled = true,
                 condition = RuleCondition.NightTime(startHour = 21, endHour = 6),
                 action = RuleAction.OverrideBackground(colorArgb = 0xFF06090B),
             ),
             ConditionalRule(
                 id = "zen_rule_night_text",
-                name = "Nighttime Greeting",
+                name = "夜のあいさつ",
                 enabled = true,
                 condition = RuleCondition.NightTime(startHour = 21, endHour = 6),
                 action = RuleAction.OverrideElementText(

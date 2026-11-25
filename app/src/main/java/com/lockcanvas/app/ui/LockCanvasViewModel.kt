@@ -48,6 +48,7 @@ data class SnackbarEvent(
     val message: String,
     val actionLabel: String? = null,
     val openWallpaperPickerOnAction: Boolean = false,
+    val undoOnAction: Boolean = false,
 )
 
 class LockCanvasViewModel(application: Application) : AndroidViewModel(application) {
@@ -146,9 +147,30 @@ class LockCanvasViewModel(application: Application) : AndroidViewModel(applicati
         }
     }
 
+    private var wallpaperPickerAwaitingResult = false
+
     fun refreshWallpaperStatus() {
-        _isWallpaperActive.value = WallpaperLauncher.isLockCanvasActive(getApplication())
+        val active = WallpaperLauncher.isLockCanvasActive(getApplication())
+        _isWallpaperActive.value = active
         _liveSnapshot.value = readSystemSnapshot()
+        if (active) {
+            // The first success of this app is defined as "the wallpaper is set".
+            viewModelScope.launch { repository.markFirstSuccessAchieved() }
+        }
+        if (wallpaperPickerAwaitingResult) {
+            wallpaperPickerAwaitingResult = false
+            if (active) {
+                _snackbarMessages.tryEmit(SnackbarEvent("ロック画面に設定できました"))
+            } else {
+                _snackbarMessages.tryEmit(
+                    SnackbarEvent(
+                        message = "まだ設定できていません。壁紙を選ぶ画面で「壁紙に設定」を押してください",
+                        actionLabel = "もう一度設定する",
+                        openWallpaperPickerOnAction = true,
+                    ),
+                )
+            }
+        }
     }
 
     fun openHome() {
@@ -164,20 +186,20 @@ class LockCanvasViewModel(application: Application) : AndroidViewModel(applicati
         _route.value = ScreenRoute.Onboarding
     }
 
-    fun completeOnboardingToEditor(goal: OnboardingGoal, trySucceeded: Boolean) {
+    fun completeOnboardingToWallpaper(goal: OnboardingGoal) {
         _onboardingGoal.value = goal
         viewModelScope.launch {
             repository.saveOnboardingCompleted(
                 version = CURRENT_ONBOARDING_VERSION,
                 goalKey = goal.storageKey,
-                firstSuccessAchieved = trySucceeded,
+                firstSuccessAchieved = false,
             )
             val allDesigns = repository.designsFlow.first()
             val recommended = allDesigns.firstOrNull { it.id == goal.recommendedPresetId }
                 ?: allDesigns.firstOrNull()
                 ?: PresetDesigns.defaultDesign()
             repository.setActiveDesign(recommended.id)
-            openEditor(recommended)
+            openHome()
         }
     }
 
@@ -287,7 +309,7 @@ class LockCanvasViewModel(application: Application) : AndroidViewModel(applicati
     fun resetToPresets() {
         viewModelScope.launch {
             repository.resetToPresets()
-            _snackbarMessages.tryEmit(SnackbarEvent("プリセットを初期状態に戻しました"))
+            _snackbarMessages.tryEmit(SnackbarEvent("初期状態に戻しました（プリセット3種類だけが残っています）"))
         }
     }
 
@@ -296,7 +318,6 @@ class LockCanvasViewModel(application: Application) : AndroidViewModel(applicati
         viewModelScope.launch {
             repository.saveDesign(current)
             repository.setActiveDesign(current.id)
-            repository.markFirstSuccessAchieved()
             _editorState.update { it.copy(hasUnsavedChanges = false) }
             val active = WallpaperLauncher.isLockCanvasActive(getApplication())
             _isWallpaperActive.value = active
@@ -316,6 +337,9 @@ class LockCanvasViewModel(application: Application) : AndroidViewModel(applicati
 
     fun launchLiveWallpaperPicker(): Boolean {
         val launched = WallpaperLauncher.launchLiveWallpaperPicker(getApplication())
+        if (launched) {
+            wallpaperPickerAwaitingResult = true
+        }
         if (!launched) {
             _snackbarMessages.tryEmit(
                 SnackbarEvent("壁紙ピッカーを開けませんでした。設定 > 壁紙 から選択してください"),
@@ -609,7 +633,17 @@ class LockCanvasViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     fun deleteElement(elementId: String) {
+        val existed = _editorState.value.design.elements.any { it.id == elementId }
         _editorState.update { EditorReducer.deleteElement(it, elementId) }
+        if (existed) {
+            _snackbarMessages.tryEmit(
+                SnackbarEvent(
+                    message = "パーツを削除しました",
+                    actionLabel = "元に戻す",
+                    undoOnAction = true,
+                ),
+            )
+        }
     }
 
     fun toggleElementVisibility(elementId: String) {

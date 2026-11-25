@@ -78,6 +78,9 @@ fun LockCanvasApp(
             if (result == SnackbarResult.ActionPerformed && event.openWallpaperPickerOnAction) {
                 requestWallpaperPicker()
             }
+            if (result == SnackbarResult.ActionPerformed && event.undoOnAction) {
+                viewModel.undo()
+            }
         }
     }
 
@@ -91,8 +94,9 @@ fun LockCanvasApp(
         ScreenRoute.Onboarding -> OnboardingScreen(
             initialGoal = onboardingGoal,
             liveSnapshot = liveSnapshot,
-            onCompleteToEditor = { goal, trySucceeded ->
-                viewModel.completeOnboardingToEditor(goal, trySucceeded)
+            onCompleteToWallpaper = { goal ->
+                viewModel.completeOnboardingToWallpaper(goal)
+                requestWallpaperPicker()
             },
             onTryLater = { goal ->
                 viewModel.completeOnboardingLater(goal, isSkip = false)
@@ -121,6 +125,8 @@ fun LockCanvasApp(
             state = editorState,
             liveSnapshot = liveSnapshot,
             snackbarHostState = snackbarHostState,
+            isWallpaperActive = isWallpaperActive,
+            onApplyWallpaperClick = requestWallpaperPicker,
             onBack = { viewModel.openHome() },
             onSaveAndApply = { viewModel.saveAndApplyCurrentDesign() },
             onRenameDesign = { name -> viewModel.renameDesign(name) },

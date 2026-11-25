@@ -147,6 +147,8 @@ fun EditorScreen(
     state: EditorUiState,
     liveSnapshot: DynamicDataSnapshot,
     snackbarHostState: SnackbarHostState,
+    isWallpaperActive: Boolean,
+    onApplyWallpaperClick: () -> Unit,
     onBack: () -> Unit,
     onSaveAndApply: () -> Unit,
     onRenameDesign: (String) -> Unit,
@@ -222,6 +224,7 @@ fun EditorScreen(
         pendingReplaceImageElementId = null
     }
 
+    var guideHintDismissed by remember { mutableStateOf(false) }
     var showRenameDialog by remember { mutableStateOf(false) }
     var showUnsavedDialog by remember { mutableStateOf(false) }
     var showAddRuleDialog by remember { mutableStateOf(false) }
@@ -308,6 +311,19 @@ fun EditorScreen(
                             },
                         )
                     }
+                    if (!isWallpaperActive) {
+                        Button(
+                            onClick = onApplyWallpaperClick,
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier
+                                .padding(end = 6.dp)
+                                .minimumInteractiveComponentSize()
+                                .heightIn(min = 38.dp),
+                        ) {
+                            Text("ロック画面に設定", style = MaterialTheme.typography.labelLarge)
+                        }
+                    }
                     Button(
                         onClick = onSaveAndApply,
                         contentPadding = PaddingValues(horizontal = 14.dp, vertical = 0.dp),
@@ -368,11 +384,31 @@ fun EditorScreen(
                     ) {
                         val chargeText = if (state.simulatedIsCharging) "充電中" else "放電中"
                         Text(
-                            text = "シミュレータ: ${state.simulatedBatteryPercent}%・$chargeText・${state.simulatedHourOfDay}時",
+                            text = "テスト表示: ${state.simulatedBatteryPercent}%・$chargeText・${state.simulatedHourOfDay}時",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                         )
+                    }
+                }
+            }
+
+            if (state.showSafeAreaGuides && !guideHintDismissed) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    Text(
+                        text = "色のついた帯は、時計や通知が重なる場所です",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    )
+                    TextButton(onClick = { guideHintDismissed = true }) {
+                        Text("閉じる", style = MaterialTheme.typography.labelSmall)
                     }
                 }
             }
@@ -540,14 +576,14 @@ fun EditorScreen(
                     )
                     DockTabItem(
                         icon = Icons.Outlined.Tune,
-                        label = "条件ルール",
+                        label = "自動切替",
                         selected = state.activeTab == EditorToolTab.RULES,
                         hasIndicator = matchedRuleIds.isNotEmpty() || state.simulatorEnabled,
                         onClick = { onSelectToolTab(EditorToolTab.RULES) },
                     )
                     DockTabItem(
                         icon = Icons.Outlined.Layers,
-                        label = "レイヤー",
+                        label = "重なり順",
                         selected = state.activeTab == EditorToolTab.LAYERS,
                         onClick = { onSelectToolTab(EditorToolTab.LAYERS) },
                     )
@@ -868,7 +904,7 @@ private fun AddElementPanel(
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text(
-            text = "テキスト・動的パーツ",
+            text = "文字と、自動で変わるパーツ",
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -885,7 +921,7 @@ private fun AddElementPanel(
         }
 
         Text(
-            text = "バッテリーゲージ・図形",
+            text = "電池のバーと図形",
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -997,19 +1033,29 @@ private fun ElementInspectorPanel(
                         if (el is TextElement) el.copy(text = newText) else el
                     }
                 },
-                label = { Text("テキスト / 動的テンプレート") },
+                label = { Text("文字（時刻や電池残量も入れられます）") },
                 modifier = Modifier.fillMaxWidth(),
                 maxLines = 3,
             )
 
-            // Dynamic Token Insert Chips
+            // Dynamic Token Insert Chips (display names in plain words; the token is inserted)
+            Text(
+                text = "下のボタンを押すと、ロック画面で自動的に変わる文字を入れられます。上の欄に {battery} のような記号が見えたら、それが自動で置き換わる合図です",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                listOf("{time}", "{date}", "{battery}", "{charging_status}").forEach { token ->
+                listOf(
+                    "{time}" to "今の時刻",
+                    "{date}" to "今日の日付",
+                    "{battery}" to "電池残量（%）",
+                    "{charging_status}" to "充電中かどうか",
+                ).forEach { (token, displayName) ->
                     FilterChip(
                         selected = element.text.contains(token),
                         onClick = {
@@ -1022,7 +1068,7 @@ private fun ElementInspectorPanel(
                                 }
                             }
                         },
-                        label = { Text(token, style = MaterialTheme.typography.labelSmall) },
+                        label = { Text(displayName, style = MaterialTheme.typography.labelSmall) },
                     )
                 }
             }
@@ -1352,7 +1398,7 @@ private fun ConditionalRulesPanel(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Text("条件シミュレーター", style = MaterialTheme.typography.titleSmall)
+                Text("条件のテスト表示", style = MaterialTheme.typography.titleSmall)
                 Switch(
                     checked = state.simulatorEnabled,
                     onCheckedChange = onSetSimulatorEnabled,
@@ -1413,7 +1459,7 @@ private fun ConditionalRulesPanel(
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text(
-            text = "登録済みルール (${state.design.rules.size})",
+            text = "自動切替のルール (${state.design.rules.size})",
             style = MaterialTheme.typography.titleSmall,
         )
         TextButton(onClick = onOpenAddRule) {
@@ -1474,7 +1520,7 @@ private fun ConditionalRulesPanel(
                     )
                     IconButton(
                         onClick = { onDeleteRule(rule.id) },
-                        modifier = Modifier.size(32.dp),
+                        modifier = Modifier.size(40.dp),
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.DeleteOutline,
@@ -1501,7 +1547,7 @@ private fun LayersPanel(
 ) {
     if (elements.isEmpty()) {
         Text(
-            text = "レイヤーがありません。「追加」タブからパーツを追加してください。",
+            text = "パーツがありません。「追加」タブからパーツを追加してください。",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -1535,7 +1581,7 @@ private fun LayersPanel(
             ) {
                 IconButton(
                     onClick = { onToggleVisibility(el.id) },
-                    modifier = Modifier.size(32.dp),
+                    modifier = Modifier.size(40.dp),
                 ) {
                     Icon(
                         imageVector = if (el.visible) {
@@ -1565,19 +1611,19 @@ private fun LayersPanel(
 
                 IconButton(
                     onClick = { onBringForward(el.id) },
-                    modifier = Modifier.size(30.dp),
+                    modifier = Modifier.size(40.dp),
                 ) {
                     Icon(Icons.Rounded.ArrowUpward, contentDescription = "上へ", modifier = Modifier.size(16.dp))
                 }
                 IconButton(
                     onClick = { onSendBackward(el.id) },
-                    modifier = Modifier.size(30.dp),
+                    modifier = Modifier.size(40.dp),
                 ) {
                     Icon(Icons.Rounded.ArrowDownward, contentDescription = "下へ", modifier = Modifier.size(16.dp))
                 }
                 IconButton(
                     onClick = { onDelete(el.id) },
-                    modifier = Modifier.size(30.dp),
+                    modifier = Modifier.size(40.dp),
                 ) {
                     Icon(
                         Icons.Outlined.DeleteOutline,
@@ -1603,18 +1649,18 @@ private fun AddRuleDialog(
     var bgColor by remember { mutableStateOf(0xFF2B0E17L) }
     val textElements = remember(elements) { elements.filterIsInstance<TextElement>() }
     var targetElementId by remember(elements) { mutableStateOf(elements.firstOrNull()?.id ?: "") }
-    var overrideText by remember { mutableStateOf("LOW POWER · {battery}") }
+    var overrideText by remember { mutableStateOf("電池わずか · {battery}") }
     var targetVisible by remember { mutableStateOf(true) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("条件ルールを追加") },
+        title = { Text("自動切替ルールを追加") },
         text = {
             Column(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                Text("条件 (IF)", style = MaterialTheme.typography.labelMedium)
+                Text("どんなとき", style = MaterialTheme.typography.labelMedium)
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     FilterChip(
                         selected = conditionType == 0,
@@ -1687,6 +1733,7 @@ private fun AddRuleDialog(
                             value = overrideText,
                             onValueChange = { overrideText = it },
                             label = { Text("置き換えるテキスト") },
+                            supportingText = { Text("{battery} は電池残量に自動で置き換わります") },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth(),
                         )
@@ -1825,7 +1872,7 @@ private fun ColorSwatchRow(
                 val isSelected = argb == selectedArgb
                 Box(
                     modifier = Modifier
-                        .size(30.dp)
+                        .size(40.dp)
                         .clip(CircleShape)
                         .background(Color(argb.toInt()))
                         .border(

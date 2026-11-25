@@ -64,7 +64,7 @@ fun SettingsInfoScreen(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             TopAppBar(
-                title = { Text("設定と仕様", style = MaterialTheme.typography.titleLarge) },
+                title = { Text("設定とアプリについて", style = MaterialTheme.typography.titleLarge) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
@@ -101,7 +101,7 @@ fun SettingsInfoScreen(
                             modifier = Modifier.size(18.dp),
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("ライブ壁紙ピッカーを開く")
+                        Text("壁紙の設定画面を開く")
                     }
 
                     Spacer(modifier = Modifier.height(6.dp))
@@ -129,7 +129,7 @@ fun SettingsInfoScreen(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "プリセットを初期状態に戻す",
+                            text = "デザインを初期状態に戻す",
                             color = MaterialTheme.colorScheme.error,
                         )
                     }
@@ -147,8 +147,8 @@ fun SettingsInfoScreen(
         ) {
             SpecListItem(
                 icon = Icons.Outlined.Wallpaper,
-                headline = "適用と反映",
-                supporting = "壁紙ピッカーで設定後、エディタの「保存」で即時反映されます",
+                headline = "壁紙の設定と反映",
+                supporting = "壁紙に設定したあとは、エディターで「保存」するだけでロック画面にすぐ反映されます",
             )
             HorizontalDivider(
                 modifier = Modifier.padding(horizontal = 16.dp),
@@ -156,8 +156,8 @@ fun SettingsInfoScreen(
             )
             SpecListItem(
                 icon = Icons.Outlined.Layers,
-                headline = "OS表示領域",
-                supporting = "時計・通知・指紋認証は最前面表示のため、中央エリア配置を推奨します",
+                headline = "時計や通知と重なる場所",
+                supporting = "ロック画面の時計・通知・指紋認証のマークは、スマホ側が手前に表示します。大事なパーツは中央あたりに置くのがおすすめです",
             )
             HorizontalDivider(
                 modifier = Modifier.padding(horizontal = 16.dp),
@@ -165,8 +165,8 @@ fun SettingsInfoScreen(
             )
             SpecListItem(
                 icon = Icons.Outlined.LockClock,
-                headline = "AOD・タッチ制限",
-                supporting = "AOD中は停止・減光し、ロック画面上のタッチ操作はOSが処理します",
+                headline = "画面が暗いとき（いつも表示）",
+                supporting = "いつも表示（AOD）のときは動きを止めて暗く表示します。ロック画面の上では、タップなどの操作はスマホ側が受け付けます",
             )
             HorizontalDivider(
                 modifier = Modifier.padding(horizontal = 16.dp),
@@ -174,8 +174,8 @@ fun SettingsInfoScreen(
             )
             SpecListItem(
                 icon = Icons.Outlined.BatteryChargingFull,
-                headline = "省電力設計",
-                supporting = "画面OFF時は描画を完全停止。動きなしでは変化時のみ更新します",
+                headline = "電池にやさしい設計",
+                supporting = "画面が消えているときは描画を止めます。動きのないデザインでは、表示が変わるときだけ更新します",
             )
         }
     }
@@ -183,8 +183,8 @@ fun SettingsInfoScreen(
     if (showResetDialog) {
         AlertDialog(
             onDismissRequest = { showResetDialog = false },
-            title = { Text("プリセットを初期化") },
-            text = { Text("保存済みのデザインを初期プリセット3種類に戻しますか？") },
+            title = { Text("初期状態に戻しますか？") },
+            text = { Text("保存したデザインはすべて削除され、最初のプリセット3種類だけが残ります。あなたが作ったデザインもすべて削除されます。この操作は取り消せません。") },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -192,7 +192,7 @@ fun SettingsInfoScreen(
                         onResetToPresets()
                     },
                 ) {
-                    Text("初期化する", color = MaterialTheme.colorScheme.error)
+                    Text("すべて削除して初期化", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {

@@ -9,17 +9,21 @@ import org.junit.Test
 class OnboardingModelsTest {
 
     @Test
-    fun pageOrder_hasExactly12PagesAndReordersValuesByGoal() {
+    fun pageOrder_has6PagesEndingAtWallpaperSetup() {
         val freePages = OnboardingPageOrder.buildPages(OnboardingGoal.FREE_LAYOUT)
         val dynamicPages = OnboardingPageOrder.buildPages(OnboardingGoal.DYNAMIC_INFO)
 
-        assertEquals(12, freePages.size)
-        assertEquals(12, dynamicPages.size)
-        assertEquals(OnboardingPageRole.VALUE_SAFE_AREA, freePages[4])
-        assertEquals(OnboardingPageRole.VALUE_DYNAMIC, dynamicPages[4])
+        assertEquals(6, freePages.size)
+        assertEquals(6, dynamicPages.size)
+        // One value page, chosen by goal
+        assertEquals(OnboardingPageRole.VALUE_SAFE_AREA, freePages[3])
+        assertEquals(OnboardingPageRole.VALUE_DYNAMIC, dynamicPages[3])
         // Choice must always come immediately before Match Result
         assertEquals(OnboardingPageRole.GOAL_CHOICE, freePages[1])
         assertEquals(OnboardingPageRole.MATCH_RESULT, freePages[2])
+        // The flow must end at the wallpaper setup page (the first success)
+        assertEquals(OnboardingPageRole.TRY_DRAG, freePages[4])
+        assertEquals(OnboardingPageRole.CONNECT, freePages[5])
     }
 
     @Test
