@@ -18,7 +18,7 @@ enum class OnboardingGoal(
         echoPhrase = "自分好みに自由に配置したいあなたには",
         matchStrength = "ドラッグと2本指操作で、ロック画面の好きな場所へ思い通りに置けます。",
         recommendedPresetId = PresetDesigns.ID_MINIMAL_CLOCK,
-        ctaSubtitle = "「ミニマル時計」を、そのままロック画面に設定します",
+        ctaSubtitle = "「オーロラガラス」を、そのままロック画面に設定します",
     ),
     DYNAMIC_INFO(
         storageKey = "dynamic_info",
@@ -26,7 +26,7 @@ enum class OnboardingGoal(
         echoPhrase = "電池や時刻をかっこよく見たいあなたには",
         matchStrength = "バッテリー残量や充電状態に応じて、リアルタイムに表情が変わります。",
         recommendedPresetId = PresetDesigns.ID_CYBER_NEON,
-        ctaSubtitle = "「サイバーネオン」を、そのままロック画面に設定します",
+        ctaSubtitle = "「ネオンHUD」を、そのままロック画面に設定します",
     ),
     UNDECIDED(
         storageKey = "undecided",
@@ -34,7 +34,7 @@ enum class OnboardingGoal(
         echoPhrase = "まずは気軽に試してみたいあなたには",
         matchStrength = "用意されたテンプレートを少し動かすだけで、雰囲気の違いをすぐ体感できます。",
         recommendedPresetId = PresetDesigns.ID_NIGHT_ZEN,
-        ctaSubtitle = "「ナイト禅」を、そのままロック画面に設定します",
+        ctaSubtitle = "「満月の禅」を、そのままロック画面に設定します",
     ),
     ;
 
