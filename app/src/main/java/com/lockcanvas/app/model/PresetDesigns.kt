@@ -22,6 +22,16 @@ object PresetDesigns {
         backgroundGradientEnabled = true,
         animationStyle = AnimationStyle.NONE,
         elements = listOf(
+            ImageElement(
+                id = "min_bg",
+                xFraction = 0.5f,
+                yFraction = 0.5f,
+                uriString = "android.resource://com.lockcanvas.app/drawable/bg_aurora",
+                widthFraction = 1.0f,
+                heightFraction = 1.0f,
+                cornerRadiusDp = 0f,
+                zIndex = -10,
+            ),
             ShapeElement(
                 id = "min_card",
                 xFraction = 0.5f,
@@ -112,6 +122,16 @@ object PresetDesigns {
         backgroundGradientEnabled = true,
         animationStyle = AnimationStyle.FLOATING_PARTICLES,
         elements = listOf(
+            ImageElement(
+                id = "cyber_bg",
+                xFraction = 0.5f,
+                yFraction = 0.5f,
+                uriString = "android.resource://com.lockcanvas.app/drawable/bg_neon",
+                widthFraction = 1.0f,
+                heightFraction = 1.0f,
+                cornerRadiusDp = 0f,
+                zIndex = -10,
+            ),
             ShapeElement(
                 id = "cyber_frame",
                 xFraction = 0.5f,
@@ -211,18 +231,15 @@ object PresetDesigns {
         backgroundGradientEnabled = true,
         animationStyle = AnimationStyle.PULSE_GLOW,
         elements = listOf(
-            ShapeElement(
-                id = "zen_halo",
+            ImageElement(
+                id = "zen_bg",
                 xFraction = 0.5f,
-                yFraction = 0.50f,
-                widthFraction = 0.80f,
-                heightFraction = 0.35f,
-                shapeType = ShapeType.CIRCLE,
-                fillColorArgb = 0x2E6EE7B7,
-                strokeColorArgb = 0x59A7F3D0,
-                strokeWidthDp = 1.2f,
+                yFraction = 0.5f,
+                uriString = "android.resource://com.lockcanvas.app/drawable/bg_zen",
+                widthFraction = 1.0f,
+                heightFraction = 1.0f,
                 cornerRadiusDp = 0f,
-                zIndex = 0,
+                zIndex = -10,
             ),
             TextElement(
                 id = "zen_quote",

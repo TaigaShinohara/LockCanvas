@@ -41,8 +41,21 @@ object WallpaperLauncher {
 
     fun isLockCanvasActive(context: Context): Boolean {
         return runCatching {
-            val info = WallpaperManager.getInstance(context.applicationContext).wallpaperInfo
-            info?.serviceName == LockCanvasWallpaperService::class.java.name
+            val manager = WallpaperManager.getInstance(context.applicationContext)
+            val target = LockCanvasWallpaperService::class.java.name
+            // wallpaperInfo alone only reflects the home-screen wallpaper; a
+            // live wallpaper applied to the lock screen only is invisible to
+            // it, so check the lock slot explicitly on Android 14+.
+            if (manager.wallpaperInfo?.serviceName == target) return@runCatching true
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                if (manager.getWallpaperInfo(WallpaperManager.FLAG_LOCK)?.serviceName == target) {
+                    return@runCatching true
+                }
+                if (manager.getWallpaperInfo(WallpaperManager.FLAG_SYSTEM)?.serviceName == target) {
+                    return@runCatching true
+                }
+            }
+            false
         }.getOrDefault(false)
     }
 }
