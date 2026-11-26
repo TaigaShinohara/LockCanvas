@@ -10,10 +10,10 @@ class PresetDesignsTest {
     @Test
     fun presetsAreValidAndPlacedInSafeLockScreenBand() {
         val presets = PresetDesigns.all()
-        assertEquals(3, presets.size)
+        assertEquals(6, presets.size)
 
         val ids = presets.map { it.id }.toSet()
-        assertEquals(3, ids.size)
+        assertEquals(6, ids.size)
 
         for (preset in presets) {
             assertTrue("Preset name should not be blank", preset.name.isNotBlank())
