@@ -136,9 +136,98 @@ class CanvasSceneRenderer(
             canvas.restore()
         }
 
+        if (snapshot.isCharging) {
+            drawChargingOverlay(canvas, width, height, unitScale, snapshot, animationTimeSec)
+        }
+
         if (showSafeAreaGuides) {
             drawSafeAreaGuides(canvas, width, height, unitScale)
         }
+    }
+
+    /**
+     * Full-screen charging mode: while the device is charging, a dark veil
+     * turns the scene into a dedicated charging screen with a pulsing
+     * progress ring, the battery percent, and bubbles rising through the
+     * frame. Needs no extra permission: charging state comes from the
+     * battery broadcast the engine already listens to.
+     */
+    private fun drawChargingOverlay(
+        canvas: Canvas,
+        width: Int,
+        height: Int,
+        unitScale: Float,
+        snapshot: DynamicDataSnapshot,
+        animationTimeSec: Float,
+    ) {
+        // Veil over the design.
+        fxPaint.shader = null
+        fxPaint.color = Color.argb(168, 3, 8, 14)
+        canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), fxPaint)
+
+        val centerX = width * 0.5f
+        val centerY = height * 0.44f
+        val pulse = 0.5f + 0.5f * sin(animationTimeSec * 2.2f)
+        val radius = width * 0.30f * (1f + 0.02f * pulse)
+
+        // Rising bubbles behind the ring.
+        val bubbleCount = 14
+        for (i in 0 until bubbleCount) {
+            val seed = (i + 1) * 2.399963f
+            val baseX = ((seed * 71.7f) % 1f).coerceIn(0.04f, 0.96f)
+            val speed = 0.030f + (i % 5) * 0.011f
+            val y = (1f - ((seed * 31.3f) % 1f + animationTimeSec * speed) % 1f)
+            val bubbleRadius = (2.0f + (i % 4) * 1.6f) * unitScale
+            val fade = (1f - y).coerceIn(0f, 1f)
+            fxPaint.color = Color.argb((30 + 70 * fade).toInt(), 110, 231, 183)
+            canvas.drawCircle(baseX * width, y * height, bubbleRadius, fxPaint)
+        }
+
+        // Soft outer glow ring.
+        strokePaint.color = Color.argb((26 + 40 * pulse).toInt(), 52, 211, 153)
+        strokePaint.strokeWidth = 22f * unitScale
+        canvas.drawCircle(centerX, centerY, radius + 14f * unitScale, strokePaint)
+
+        // Track ring.
+        strokePaint.color = Color.argb(64, 255, 255, 255)
+        strokePaint.strokeWidth = 10f * unitScale
+        canvas.drawCircle(centerX, centerY, radius, strokePaint)
+
+        // Progress arc for the battery percent.
+        val arcRect = RectF(
+            centerX - radius,
+            centerY - radius,
+            centerX + radius,
+            centerY + radius,
+        )
+        strokePaint.color = Color.rgb(52, 211, 153)
+        strokePaint.strokeWidth = 10f * unitScale
+        strokePaint.strokeCap = Paint.Cap.ROUND
+        canvas.drawArc(
+            arcRect,
+            -90f,
+            360f * (snapshot.batteryPercent.coerceIn(0, 100) / 100f),
+            false,
+            strokePaint,
+        )
+        strokePaint.strokeCap = Paint.Cap.BUTT
+
+        // Percent and label inside the ring.
+        textPaint.color = Color.WHITE
+        textPaint.textSize = 52f * unitScale
+        textPaint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        val percentText = "${snapshot.batteryPercent.coerceIn(0, 100)}%"
+        textPaint.getTextBounds(percentText, 0, percentText.length, textBounds)
+        canvas.drawText(
+            percentText,
+            centerX,
+            centerY + textBounds.height() / 2f - 8f * unitScale,
+            textPaint,
+        )
+        textPaint.textSize = 16f * unitScale
+        textPaint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
+        textPaint.color = Color.rgb(167, 243, 208)
+        canvas.drawText("充電中", centerX, centerY + 30f * unitScale, textPaint)
     }
 
     fun hitTestElement(

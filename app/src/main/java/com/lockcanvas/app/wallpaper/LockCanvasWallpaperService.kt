@@ -111,7 +111,8 @@ class LockCanvasWallpaperService : WallpaperService() {
                     }
                 }
                 maybeNotifyColorsChanged()
-                if (engineVisible) {
+                val startedLoop = syncAnimationLoop()
+                if (engineVisible && !startedLoop) {
                     drawFrame(currentAnimationTimeSec())
                 }
             }
@@ -277,13 +278,15 @@ class LockCanvasWallpaperService : WallpaperService() {
             }
         }
 
-        private fun syncAnimationLoop(): Boolean {
-            val shouldAnimate = WallpaperFramePolicy.shouldRunAnimationLoop(
+        private fun shouldAnimateNow(): Boolean =
+            WallpaperFramePolicy.shouldRunAnimationLoop(
                 isVisible = engineVisible,
                 hasValidSurface = isSurfaceValid,
                 animationStyle = activeDesign.animationStyle,
-            )
-            if (!shouldAnimate) {
+            ) || (engineVisible && isSurfaceValid && batteryState.isCharging)
+
+        private fun syncAnimationLoop(): Boolean {
+            if (!shouldAnimateNow()) {
                 stopAnimationLoop()
                 return false
             }
@@ -291,17 +294,14 @@ class LockCanvasWallpaperService : WallpaperService() {
 
             animationStartNanos = System.nanoTime()
             animationJob = engineScope.launch {
-                while (
-                    isActive &&
-                    WallpaperFramePolicy.shouldRunAnimationLoop(
-                        isVisible = engineVisible,
-                        hasValidSurface = isSurfaceValid,
-                        animationStyle = activeDesign.animationStyle,
-                    )
-                ) {
+                while (isActive && shouldAnimateNow()) {
                     drawFrame(currentAnimationTimeSec())
                     val intervalMs = WallpaperFramePolicy.frameIntervalMs(activeDesign.animationStyle)
-                        ?: break
+                        ?: if (batteryState.isCharging) {
+                            WallpaperFramePolicy.ANIMATED_FRAME_INTERVAL_MS
+                        } else {
+                            break
+                        }
                     delay(intervalMs)
                 }
             }
@@ -314,7 +314,10 @@ class LockCanvasWallpaperService : WallpaperService() {
         }
 
         private fun currentAnimationTimeSec(): Float {
-            if (WallpaperFramePolicy.frameIntervalMs(activeDesign.animationStyle) == null) {
+            if (
+                WallpaperFramePolicy.frameIntervalMs(activeDesign.animationStyle) == null &&
+                !batteryState.isCharging
+            ) {
                 return 0f
             }
             return ((System.nanoTime() - animationStartNanos) / 1_000_000_000.0).toFloat()
