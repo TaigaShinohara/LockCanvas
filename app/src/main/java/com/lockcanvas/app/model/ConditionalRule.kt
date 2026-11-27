@@ -30,6 +30,15 @@ sealed class RuleCondition {
         val startHour: Int = 20,
         val endHour: Int = 6,
     ) : RuleCondition()
+
+    @Serializable
+    @SerialName("date_range")
+    data class DateRange(
+        val startMonth: Int,
+        val startDay: Int,
+        val endMonth: Int,
+        val endDay: Int,
+    ) : RuleCondition()
 }
 
 @Serializable

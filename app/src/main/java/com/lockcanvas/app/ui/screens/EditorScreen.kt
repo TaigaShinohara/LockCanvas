@@ -1919,6 +1919,8 @@ private fun describeCondition(condition: RuleCondition): String = when (conditio
     is RuleCondition.BatteryBelow -> "電池${condition.thresholdPercent}%未満"
     is RuleCondition.IsCharging -> "充電中"
     is RuleCondition.NightTime -> "夜間(${condition.startHour}時-${condition.endHour}時)"
+    is RuleCondition.DateRange ->
+        "期間(${condition.startMonth}/${condition.startDay}-${condition.endMonth}/${condition.endDay})"
 }
 
 private fun describeAction(action: RuleAction): String = when (action) {

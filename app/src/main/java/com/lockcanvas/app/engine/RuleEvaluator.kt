@@ -92,6 +92,20 @@ object RuleEvaluator {
                 hour >= start || hour < end
             }
         }
+        is RuleCondition.DateRange -> {
+            val today = snapshot.monthOfYear.coerceIn(1, 12) * 100 +
+                snapshot.dayOfMonth.coerceIn(1, 31)
+            val start = condition.startMonth.coerceIn(1, 12) * 100 +
+                condition.startDay.coerceIn(1, 31)
+            val end = condition.endMonth.coerceIn(1, 12) * 100 +
+                condition.endDay.coerceIn(1, 31)
+            if (start <= end) {
+                today in start..end
+            } else {
+                // Range wraps over the year boundary (e.g. Dec 1 - Feb 28).
+                today >= start || today <= end
+            }
+        }
     }
 
     fun evaluateRule(

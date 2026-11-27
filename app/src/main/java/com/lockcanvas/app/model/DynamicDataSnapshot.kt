@@ -12,6 +12,8 @@ data class DynamicDataSnapshot(
     val batteryPercent: Int,
     val isCharging: Boolean,
     val chargingLabel: String,
+    val monthOfYear: Int = 1,
+    val dayOfMonth: Int = 1,
 ) {
     companion object {
         fun sample(
@@ -21,6 +23,8 @@ data class DynamicDataSnapshot(
             batteryPercent: Int = 82,
             isCharging: Boolean = false,
             chargingLabel: String = if (isCharging) "Charging" else "On Battery",
+            monthOfYear: Int = 11,
+            dayOfMonth: Int = 23,
         ): DynamicDataSnapshot = DynamicDataSnapshot(
             timeText = timeText,
             dateText = dateText,
@@ -28,6 +32,8 @@ data class DynamicDataSnapshot(
             batteryPercent = batteryPercent.coerceIn(0, 100),
             isCharging = isCharging,
             chargingLabel = chargingLabel,
+            monthOfYear = monthOfYear.coerceIn(1, 12),
+            dayOfMonth = dayOfMonth.coerceIn(1, 31),
         )
 
         fun fromSystem(
@@ -67,6 +73,8 @@ data class DynamicDataSnapshot(
                 batteryPercent = clampedBattery,
                 isCharging = isCharging,
                 chargingLabel = label,
+                monthOfYear = calendar.get(Calendar.MONTH) + 1,
+                dayOfMonth = calendar.get(Calendar.DAY_OF_MONTH),
             )
         }
     }

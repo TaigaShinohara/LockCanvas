@@ -8,6 +8,7 @@ object PresetDesigns {
     const val ID_MONO_TYPE = "preset_mono_type"
     const val ID_SUNSET_GRADIENT = "preset_sunset_gradient"
     const val ID_PAPER_INK = "preset_paper_ink"
+    const val ID_KOYOMI = "preset_koyomi"
 
     fun all(): List<CanvasDesign> = listOf(
         minimalClockAndBattery(),
@@ -16,6 +17,7 @@ object PresetDesigns {
         cyberNeonGauge(),
         nightZenCanvas(),
         paperInk(),
+        koyomi(),
     )
 
     fun defaultDesign(): CanvasDesign = minimalClockAndBattery()
@@ -525,4 +527,288 @@ object PresetDesigns {
         ),
         updatedAtEpochMs = 1_700_000_005_000L,
     )
+
+    /** The 24 solar terms: (name, seasonal word, start month, start day). */
+    private data class Sekki(val name: String, val word: String, val month: Int, val day: Int)
+
+    private val sekkiTable = listOf(
+        Sekki("小寒", "寒の入り", 1, 6),
+        Sekki("大寒", "一年でいちばん寒い頃", 1, 20),
+        Sekki("立春", "春立つ", 2, 4),
+        Sekki("雨水", "雪が雨に変わる頃", 2, 19),
+        Sekki("啓蟄", "虫が顔を出す頃", 3, 6),
+        Sekki("春分", "昼と夜が同じ長さ", 3, 21),
+        Sekki("清明", "空が澄んでくる頃", 4, 5),
+        Sekki("穀雨", "雨が穀物をうるおす", 4, 20),
+        Sekki("立夏", "夏の気配", 5, 6),
+        Sekki("小満", "緑が満ちてくる", 5, 21),
+        Sekki("芒種", "稲を植える頃", 6, 6),
+        Sekki("夏至", "一年でいちばん昼が長い", 6, 21),
+        Sekki("小暑", "暑さが始まる", 7, 7),
+        Sekki("大暑", "一年でいちばん暑い頃", 7, 23),
+        Sekki("立秋", "秋の気配", 8, 8),
+        Sekki("処暑", "暑さが落ち着く", 8, 23),
+        Sekki("白露", "朝露が白く光る", 9, 8),
+        Sekki("秋分", "昼と夜が同じ長さ", 9, 23),
+        Sekki("寒露", "露が冷たくなる", 10, 8),
+        Sekki("霜降", "霜が降り始める", 10, 23),
+        Sekki("立冬", "冬の気配", 11, 7),
+        Sekki("小雪", "雪がちらつく頃", 11, 22),
+        Sekki("大雪", "雪が本格的になる", 12, 7),
+        Sekki("冬至", "一年でいちばん夜が長い", 12, 22),
+    )
+
+    private fun dayBefore(month: Int, day: Int): Pair<Int, Int> {
+        if (day > 1) return month to (day - 1)
+        val prevMonth = if (month == 1) 12 else month - 1
+        val lastDay = when (prevMonth) {
+            2 -> 28
+            4, 6, 9, 11 -> 30
+            else -> 31
+        }
+        return prevMonth to lastDay
+    }
+
+    private data class Season(
+        val key: String,
+        val label: String,
+        val startMonth: Int,
+        val startDay: Int,
+        val endMonth: Int,
+        val endDay: Int,
+        val backgroundArgb: Long,
+        val motifColorArgb: Long,
+        val motifPositions: List<Pair<Float, Float>>,
+    )
+
+    private val seasons = listOf(
+        Season(
+            "spring", "春", 3, 1, 5, 31, 0xFF33222E, 0xFFF9A8C9,
+            listOf(0.18f to 0.62f, 0.30f to 0.70f, 0.85f to 0.66f),
+        ),
+        Season(
+            "summer", "夏", 6, 1, 8, 31, 0xFF0E2A30, 0xFFD9F99D,
+            listOf(0.22f to 0.66f, 0.72f to 0.72f, 0.60f to 0.60f),
+        ),
+        Season(
+            "autumn", "秋", 9, 1, 11, 30, 0xFF241A2E, 0xFFF59E6C,
+            listOf(0.20f to 0.64f, 0.82f to 0.60f, 0.66f to 0.70f),
+        ),
+        Season(
+            "winter", "冬", 12, 1, 2, 28, 0xFF101A2C, 0xFFF8FAFC,
+            listOf(0.25f to 0.60f, 0.75f to 0.66f, 0.50f to 0.72f),
+        ),
+    )
+
+    private data class SpecialDay(
+        val key: String,
+        val month: Int,
+        val day: Int,
+        val text: String,
+    )
+
+    private val specialDays = listOf(
+        SpecialDay("newyear", 1, 1, "あけましておめでとう"),
+        SpecialDay("setsubun", 2, 3, "鬼は外、福は内"),
+        SpecialDay("hinamatsuri", 3, 3, "ひな祭り"),
+        SpecialDay("kodomo", 5, 5, "こどもの日"),
+        SpecialDay("tanabata", 7, 7, "星に願いを"),
+        SpecialDay("yama", 8, 11, "山の日"),
+        SpecialDay("bunka", 11, 3, "文化の日"),
+        SpecialDay("christmas", 12, 25, "メリークリスマス"),
+        SpecialDay("omisoka", 12, 31, "今年もおつかれさま"),
+    )
+
+    /**
+     * 暦めくり: a calendar-driven design. The season changes the background
+     * and the drifting motifs, the current solar term (二十四節気) supplies
+     * the headline word, and special days add one quiet line. Everything is
+     * driven by date-range rules evaluated at draw time, so the face changes
+     * on its own as the year turns — the reason comes from the calendar,
+     * not from the app.
+     */
+    fun koyomi(): CanvasDesign {
+        val elements = mutableListOf<CanvasElement>(
+            ShapeElement(
+                id = "koyomi_moon",
+                xFraction = 0.78f,
+                yFraction = 0.335f,
+                widthFraction = 0.15f,
+                heightFraction = 0.070f,
+                shapeType = ShapeType.CIRCLE,
+                fillColorArgb = 0xFFF3E5C0,
+                strokeColorArgb = 0x00000000,
+                strokeWidthDp = 0f,
+                cornerRadiusDp = 0f,
+                zIndex = 1,
+            ),
+            TextElement(
+                id = "koyomi_date",
+                xFraction = 0.5f,
+                yFraction = 0.440f,
+                text = "{date}",
+                colorArgb = 0xFFD8DEE9,
+                fontSizeSp = 15f,
+                bold = false,
+                dynamicTemplate = true,
+                zIndex = 10,
+            ),
+            TextElement(
+                id = "koyomi_time",
+                xFraction = 0.5f,
+                yFraction = 0.520f,
+                text = "{time}",
+                colorArgb = 0xFFF8FAFC,
+                fontSizeSp = 60f,
+                bold = true,
+                dynamicTemplate = true,
+                zIndex = 11,
+            ),
+            TextElement(
+                id = "koyomi_sekki",
+                xFraction = 0.5f,
+                yFraction = 0.600f,
+                text = "小雪",
+                colorArgb = 0xFFF3E5C0,
+                fontSizeSp = 21f,
+                bold = true,
+                dynamicTemplate = false,
+                zIndex = 12,
+            ),
+            TextElement(
+                id = "koyomi_word",
+                xFraction = 0.5f,
+                yFraction = 0.648f,
+                text = "雪がちらつく頃",
+                colorArgb = 0xFFB9C4D6,
+                fontSizeSp = 14f,
+                bold = false,
+                dynamicTemplate = false,
+                zIndex = 12,
+            ),
+            TextElement(
+                id = "koyomi_special",
+                xFraction = 0.5f,
+                yFraction = 0.700f,
+                text = "",
+                colorArgb = 0xFFF9A8C9,
+                fontSizeSp = 14f,
+                bold = false,
+                dynamicTemplate = false,
+                zIndex = 12,
+            ),
+            BatteryGaugeElement(
+                id = "koyomi_battery",
+                xFraction = 0.5f,
+                yFraction = 0.790f,
+                style = BatteryGaugeStyle.BAR,
+                widthFraction = 0.36f,
+                heightFraction = 0.018f,
+                activeColorArgb = 0xFFC9B48A,
+                trackColorArgb = 0x33FFFFFF,
+                textColorArgb = 0xFFB9C4D6,
+                showLabel = true,
+                zIndex = 13,
+            ),
+        )
+        seasons.forEach { season ->
+            season.motifPositions.forEachIndexed { index, (x, y) ->
+                elements.add(
+                    ShapeElement(
+                        id = "koyomi_motif_${season.key}_${index + 1}",
+                        xFraction = x,
+                        yFraction = y,
+                        widthFraction = 0.055f,
+                        heightFraction = 0.026f,
+                        shapeType = ShapeType.CIRCLE,
+                        fillColorArgb = season.motifColorArgb,
+                        strokeColorArgb = 0x00000000,
+                        strokeWidthDp = 0f,
+                        cornerRadiusDp = 0f,
+                        zIndex = 2,
+                        visible = false,
+                    ),
+                )
+            }
+        }
+
+        val rules = mutableListOf<ConditionalRule>()
+        seasons.forEach { season ->
+            val range = RuleCondition.DateRange(
+                startMonth = season.startMonth,
+                startDay = season.startDay,
+                endMonth = season.endMonth,
+                endDay = season.endDay,
+            )
+            rules.add(
+                ConditionalRule(
+                    id = "koyomi_bg_${season.key}",
+                    name = "${season.label}の背景",
+                    condition = range,
+                    action = RuleAction.OverrideBackground(season.backgroundArgb),
+                ),
+            )
+            season.motifPositions.indices.forEach { index ->
+                rules.add(
+                    ConditionalRule(
+                        id = "koyomi_motif_${season.key}_${index + 1}",
+                        name = "${season.label}のモチーフ",
+                        condition = range,
+                        action = RuleAction.ToggleElementVisibility(
+                            elementId = "koyomi_motif_${season.key}_${index + 1}",
+                            visible = true,
+                        ),
+                    ),
+                )
+            }
+        }
+        sekkiTable.forEachIndexed { index, sekki ->
+            val next = sekkiTable[(index + 1) % sekkiTable.size]
+            val (endMonth, endDay) = dayBefore(next.month, next.day)
+            val range = RuleCondition.DateRange(
+                startMonth = sekki.month,
+                startDay = sekki.day,
+                endMonth = endMonth,
+                endDay = endDay,
+            )
+            rules.add(
+                ConditionalRule(
+                    id = "koyomi_sekki_name_$index",
+                    name = "節気：${sekki.name}",
+                    condition = range,
+                    action = RuleAction.OverrideElementText("koyomi_sekki", sekki.name),
+                ),
+            )
+            rules.add(
+                ConditionalRule(
+                    id = "koyomi_sekki_word_$index",
+                    name = "節気の言葉：${sekki.name}",
+                    condition = range,
+                    action = RuleAction.OverrideElementText("koyomi_word", sekki.word),
+                ),
+            )
+        }
+        specialDays.forEach { day ->
+            rules.add(
+                ConditionalRule(
+                    id = "koyomi_special_${day.key}",
+                    name = "特別な日：${day.text}",
+                    condition = RuleCondition.DateRange(day.month, day.day, day.month, day.day),
+                    action = RuleAction.OverrideElementText("koyomi_special", day.text),
+                ),
+            )
+        }
+
+        return CanvasDesign(
+            id = ID_KOYOMI,
+            name = "暦めくり",
+            backgroundColorArgb = 0xFF101A2C,
+            secondaryBackgroundColorArgb = 0xFF101A2C,
+            backgroundGradientEnabled = false,
+            animationStyle = AnimationStyle.FLOATING_PARTICLES,
+            elements = elements,
+            rules = rules,
+            updatedAtEpochMs = 1_700_000_006_000L,
+        )
+    }
 }
