@@ -39,6 +39,18 @@ sealed class RuleCondition {
         val endMonth: Int,
         val endDay: Int,
     ) : RuleCondition()
+
+    @Serializable
+    @SerialName("weather_is")
+    data class WeatherIs(
+        val kind: String,
+    ) : RuleCondition()
+
+    @Serializable
+    @SerialName("event_within")
+    data class EventWithin(
+        val minutes: Int,
+    ) : RuleCondition()
 }
 
 @Serializable

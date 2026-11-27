@@ -1921,6 +1921,8 @@ private fun describeCondition(condition: RuleCondition): String = when (conditio
     is RuleCondition.NightTime -> "夜間(${condition.startHour}時-${condition.endHour}時)"
     is RuleCondition.DateRange ->
         "期間(${condition.startMonth}/${condition.startDay}-${condition.endMonth}/${condition.endDay})"
+    is RuleCondition.WeatherIs -> "天気：${condition.kind}"
+    is RuleCondition.EventWithin -> "次の予定まで${condition.minutes}分以内"
 }
 
 private fun describeAction(action: RuleAction): String = when (action) {

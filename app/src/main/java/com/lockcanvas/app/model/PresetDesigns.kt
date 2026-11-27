@@ -9,6 +9,8 @@ object PresetDesigns {
     const val ID_SUNSET_GRADIENT = "preset_sunset_gradient"
     const val ID_PAPER_INK = "preset_paper_ink"
     const val ID_KOYOMI = "preset_koyomi"
+    const val ID_SORAMOYO = "preset_soramoyo"
+    const val ID_NEXT_EVENT = "preset_next_event"
 
     fun all(): List<CanvasDesign> = listOf(
         minimalClockAndBattery(),
@@ -18,6 +20,8 @@ object PresetDesigns {
         nightZenCanvas(),
         paperInk(),
         koyomi(),
+        soramoyo(),
+        nextEvent(),
     )
 
     fun defaultDesign(): CanvasDesign = minimalClockAndBattery()
@@ -809,6 +813,377 @@ object PresetDesigns {
             elements = elements,
             rules = rules,
             updatedAtEpochMs = 1_700_000_006_000L,
+        )
+    }
+
+    private data class WeatherFace(
+        val kind: String,
+        val label: String,
+        val word: String,
+        val line: String,
+        val backgroundArgb: Long,
+        val motifIds: List<String>,
+    )
+
+    /**
+     * 空模様: the sky decides the face. The engine feeds the current weather
+     * kind into the snapshot; rules swap the background, the weather word and
+     * one quiet factual line, and show the matching motif (sun / cloud /
+     * rain streaks / snow). Facts only, no exaggeration.
+     */
+    fun soramoyo(): CanvasDesign {
+        val elements = mutableListOf<CanvasElement>(
+            ShapeElement(
+                id = "sora_sun",
+                xFraction = 0.80f,
+                yFraction = 0.335f,
+                widthFraction = 0.15f,
+                heightFraction = 0.070f,
+                shapeType = ShapeType.CIRCLE,
+                fillColorArgb = 0xFFFBBF24,
+                strokeColorArgb = 0x00000000,
+                strokeWidthDp = 0f,
+                cornerRadiusDp = 0f,
+                zIndex = 1,
+                visible = false,
+            ),
+            ShapeElement(
+                id = "sora_cloud_1",
+                xFraction = 0.76f,
+                yFraction = 0.330f,
+                widthFraction = 0.17f,
+                heightFraction = 0.055f,
+                shapeType = ShapeType.CIRCLE,
+                fillColorArgb = 0xFF94A3B8,
+                strokeColorArgb = 0x00000000,
+                strokeWidthDp = 0f,
+                cornerRadiusDp = 0f,
+                zIndex = 1,
+                visible = false,
+            ),
+            ShapeElement(
+                id = "sora_cloud_2",
+                xFraction = 0.85f,
+                yFraction = 0.352f,
+                widthFraction = 0.11f,
+                heightFraction = 0.040f,
+                shapeType = ShapeType.CIRCLE,
+                fillColorArgb = 0xFF7C8DA6,
+                strokeColorArgb = 0x00000000,
+                strokeWidthDp = 0f,
+                cornerRadiusDp = 0f,
+                zIndex = 1,
+                visible = false,
+            ),
+            TextElement(
+                id = "sora_date",
+                xFraction = 0.5f,
+                yFraction = 0.440f,
+                text = "{date}",
+                colorArgb = 0xFFCBD5E1,
+                fontSizeSp = 15f,
+                bold = false,
+                dynamicTemplate = true,
+                zIndex = 10,
+            ),
+            TextElement(
+                id = "sora_time",
+                xFraction = 0.5f,
+                yFraction = 0.520f,
+                text = "{time}",
+                colorArgb = 0xFFF8FAFC,
+                fontSizeSp = 60f,
+                bold = true,
+                dynamicTemplate = true,
+                zIndex = 11,
+            ),
+            TextElement(
+                id = "sora_word",
+                xFraction = 0.5f,
+                yFraction = 0.600f,
+                text = "くもり",
+                colorArgb = 0xFFF8FAFC,
+                fontSizeSp = 22f,
+                bold = true,
+                dynamicTemplate = false,
+                zIndex = 12,
+            ),
+            TextElement(
+                id = "sora_line",
+                xFraction = 0.5f,
+                yFraction = 0.648f,
+                text = "空は落ち着いている",
+                colorArgb = 0xFFB9C4D6,
+                fontSizeSp = 14f,
+                bold = false,
+                dynamicTemplate = false,
+                zIndex = 12,
+            ),
+            TextElement(
+                id = "sora_temp",
+                xFraction = 0.5f,
+                yFraction = 0.700f,
+                text = "{weather_temp}",
+                colorArgb = 0xFFCBD5E1,
+                fontSizeSp = 16f,
+                bold = false,
+                dynamicTemplate = true,
+                zIndex = 12,
+            ),
+            BatteryGaugeElement(
+                id = "sora_battery",
+                xFraction = 0.5f,
+                yFraction = 0.790f,
+                style = BatteryGaugeStyle.BAR,
+                widthFraction = 0.36f,
+                heightFraction = 0.018f,
+                activeColorArgb = 0xFF7DD3FC,
+                trackColorArgb = 0x33FFFFFF,
+                textColorArgb = 0xFFB9C4D6,
+                showLabel = true,
+                zIndex = 13,
+            ),
+        )
+        // Rain streaks: thin tilted pills.
+        val rainPositions = listOf(
+            0.20f to 0.60f, 0.38f to 0.68f, 0.55f to 0.615f, 0.70f to 0.70f, 0.84f to 0.63f,
+        )
+        rainPositions.forEachIndexed { index, (x, y) ->
+            elements.add(
+                ShapeElement(
+                    id = "sora_rain_${index + 1}",
+                    xFraction = x,
+                    yFraction = y,
+                    widthFraction = 0.012f,
+                    heightFraction = 0.050f,
+                    shapeType = ShapeType.PILL,
+                    fillColorArgb = 0xFF7DD3FC,
+                    strokeColorArgb = 0x00000000,
+                    strokeWidthDp = 0f,
+                    cornerRadiusDp = 6f,
+                    rotationDegrees = 15f,
+                    zIndex = 2,
+                    visible = false,
+                ),
+            )
+        }
+        // Snow dots.
+        val snowPositions = listOf(
+            0.22f to 0.615f, 0.42f to 0.685f, 0.60f to 0.60f, 0.74f to 0.665f, 0.86f to 0.715f,
+        )
+        snowPositions.forEachIndexed { index, (x, y) ->
+            elements.add(
+                ShapeElement(
+                    id = "sora_snow_${index + 1}",
+                    xFraction = x,
+                    yFraction = y,
+                    widthFraction = 0.030f,
+                    heightFraction = 0.014f,
+                    shapeType = ShapeType.CIRCLE,
+                    fillColorArgb = 0xFFF8FAFC,
+                    strokeColorArgb = 0x00000000,
+                    strokeWidthDp = 0f,
+                    cornerRadiusDp = 0f,
+                    zIndex = 2,
+                    visible = false,
+                ),
+            )
+        }
+
+        val faces = listOf(
+            WeatherFace(
+                DynamicDataSnapshot.WEATHER_CLEAR, "晴れ", "晴れ", "洗濯日和",
+                0xFF1D3A52, listOf("sora_sun"),
+            ),
+            WeatherFace(
+                DynamicDataSnapshot.WEATHER_CLOUDY, "くもり", "くもり", "空は落ち着いている",
+                0xFF26313D, listOf("sora_cloud_1", "sora_cloud_2"),
+            ),
+            WeatherFace(
+                DynamicDataSnapshot.WEATHER_RAIN, "雨", "雨", "傘を忘れずに",
+                0xFF1B2735,
+                listOf("sora_rain_1", "sora_rain_2", "sora_rain_3", "sora_rain_4", "sora_rain_5"),
+            ),
+            WeatherFace(
+                DynamicDataSnapshot.WEATHER_SNOW, "雪", "雪", "足元に気をつけて",
+                0xFF2A3242,
+                listOf("sora_snow_1", "sora_snow_2", "sora_snow_3", "sora_snow_4", "sora_snow_5"),
+            ),
+        )
+        val rules = mutableListOf<ConditionalRule>()
+        faces.forEach { face ->
+            val condition = RuleCondition.WeatherIs(face.kind)
+            rules.add(
+                ConditionalRule(
+                    id = "sora_bg_${face.kind}",
+                    name = "天気の背景：${face.label}",
+                    condition = condition,
+                    action = RuleAction.OverrideBackground(face.backgroundArgb),
+                ),
+            )
+            rules.add(
+                ConditionalRule(
+                    id = "sora_word_${face.kind}",
+                    name = "天気の言葉：${face.label}",
+                    condition = condition,
+                    action = RuleAction.OverrideElementText("sora_word", face.word),
+                ),
+            )
+            rules.add(
+                ConditionalRule(
+                    id = "sora_line_${face.kind}",
+                    name = "天気の一行：${face.label}",
+                    condition = condition,
+                    action = RuleAction.OverrideElementText("sora_line", face.line),
+                ),
+            )
+            face.motifIds.forEach { motifId ->
+                rules.add(
+                    ConditionalRule(
+                        id = "sora_show_$motifId",
+                        name = "天気のモチーフ：${face.label}",
+                        condition = condition,
+                        action = RuleAction.ToggleElementVisibility(motifId, visible = true),
+                    ),
+                )
+            }
+        }
+
+        return CanvasDesign(
+            id = ID_SORAMOYO,
+            name = "空模様",
+            backgroundColorArgb = 0xFF26313D,
+            secondaryBackgroundColorArgb = 0xFF26313D,
+            backgroundGradientEnabled = false,
+            animationStyle = AnimationStyle.NONE,
+            elements = elements,
+            rules = rules,
+            updatedAtEpochMs = 1_700_000_007_000L,
+        )
+    }
+
+    /**
+     * 次の予定: the next appointment quietly owns the face. The event name
+     * and a factual countdown come from the calendar through the snapshot;
+     * as the start approaches the background warms slightly and a small
+     * dot appears — no shouting, just the fact getting closer. With no
+     * upcoming event the design stays calm.
+     */
+    fun nextEvent(): CanvasDesign {
+        val elements = listOf<CanvasElement>(
+            TextElement(
+                id = "next_date",
+                xFraction = 0.5f,
+                yFraction = 0.420f,
+                text = "{date}",
+                colorArgb = 0xFFCBD5E1,
+                fontSizeSp = 15f,
+                bold = false,
+                dynamicTemplate = true,
+                zIndex = 10,
+            ),
+            TextElement(
+                id = "next_time",
+                xFraction = 0.5f,
+                yFraction = 0.500f,
+                text = "{time}",
+                colorArgb = 0xFFF8FAFC,
+                fontSizeSp = 60f,
+                bold = true,
+                dynamicTemplate = true,
+                zIndex = 11,
+            ),
+            TextElement(
+                id = "next_label",
+                xFraction = 0.5f,
+                yFraction = 0.585f,
+                text = "次の予定",
+                colorArgb = 0xFF8FA3B8,
+                fontSizeSp = 13f,
+                bold = false,
+                dynamicTemplate = false,
+                zIndex = 12,
+            ),
+            TextElement(
+                id = "next_event",
+                xFraction = 0.5f,
+                yFraction = 0.628f,
+                text = "{next_event}",
+                colorArgb = 0xFFF8FAFC,
+                fontSizeSp = 19f,
+                bold = true,
+                dynamicTemplate = true,
+                zIndex = 12,
+            ),
+            TextElement(
+                id = "next_countdown",
+                xFraction = 0.5f,
+                yFraction = 0.688f,
+                text = "{countdown}",
+                colorArgb = 0xFFFBBF24,
+                fontSizeSp = 26f,
+                bold = true,
+                dynamicTemplate = true,
+                zIndex = 12,
+            ),
+            ShapeElement(
+                id = "next_dot",
+                xFraction = 0.5f,
+                yFraction = 0.745f,
+                widthFraction = 0.035f,
+                heightFraction = 0.016f,
+                shapeType = ShapeType.CIRCLE,
+                fillColorArgb = 0xFFF59E6C,
+                strokeColorArgb = 0x00000000,
+                strokeWidthDp = 0f,
+                cornerRadiusDp = 0f,
+                zIndex = 2,
+                visible = false,
+            ),
+            BatteryGaugeElement(
+                id = "next_battery",
+                xFraction = 0.5f,
+                yFraction = 0.795f,
+                style = BatteryGaugeStyle.BAR,
+                widthFraction = 0.36f,
+                heightFraction = 0.018f,
+                activeColorArgb = 0xFF7DD3FC,
+                trackColorArgb = 0x33FFFFFF,
+                textColorArgb = 0xFFB9C4D6,
+                showLabel = true,
+                zIndex = 13,
+            ),
+        )
+        val rules = listOf(
+            ConditionalRule(
+                id = "next_bg_180",
+                name = "予定まで3時間以内の背景",
+                condition = RuleCondition.EventWithin(minutes = 180),
+                action = RuleAction.OverrideBackground(0xFF2E2620),
+            ),
+            ConditionalRule(
+                id = "next_dot_180",
+                name = "予定が近い印",
+                condition = RuleCondition.EventWithin(minutes = 180),
+                action = RuleAction.ToggleElementVisibility("next_dot", visible = true),
+            ),
+            ConditionalRule(
+                id = "next_bg_60",
+                name = "予定まで1時間以内の背景",
+                condition = RuleCondition.EventWithin(minutes = 60),
+                action = RuleAction.OverrideBackground(0xFF38241C),
+            ),
+        )
+        return CanvasDesign(
+            id = ID_NEXT_EVENT,
+            name = "次の予定",
+            backgroundColorArgb = 0xFF1E2A32,
+            secondaryBackgroundColorArgb = 0xFF1E2A32,
+            backgroundGradientEnabled = false,
+            animationStyle = AnimationStyle.NONE,
+            elements = elements,
+            rules = rules,
+            updatedAtEpochMs = 1_700_000_008_000L,
         )
     }
 }

@@ -58,6 +58,17 @@ class LockCanvasWallpaperService : WallpaperService() {
         private var animationStartNanos: Long = System.nanoTime()
         private var lastColorSignature: ColorSignature? = null
 
+        // Environment state for the 空模様 / 次の予定 presets, refreshed off
+        // the main thread when the wallpaper becomes visible and the cache
+        // is stale. Defaults keep every other preset unaffected.
+        private var envWeatherKind: String = DynamicDataSnapshot.WEATHER_UNKNOWN
+        private var envTempText: String = ""
+        private var envNextEventText: String = "次の予定なし"
+        private var envNextEventStartMs: Long = -1L
+        private var envWeatherFetchedAtMs: Long = 0L
+        private var envEventFetchedAtMs: Long = 0L
+        private var envRefreshRunning: Boolean = false
+
         // Gyro parallax state. Smoothed tilt in -1..1; redraws happen only
         // while the tilt is actually changing, so a still phone costs nothing.
         private var parallaxX: Float = 0f
@@ -167,6 +178,7 @@ class LockCanvasWallpaperService : WallpaperService() {
                 registerReceiversIfNeeded()
                 registerTiltIfNeeded()
                 refreshStickyBatteryState()
+                refreshEnvironmentIfStale()
                 maybeNotifyColorsChanged()
                 val startedLoop = syncAnimationLoop()
                 if (!startedLoop) {
@@ -327,7 +339,53 @@ class LockCanvasWallpaperService : WallpaperService() {
             DynamicDataSnapshot.fromSystem(
                 batteryPercent = batteryState.percent,
                 isCharging = batteryState.isCharging,
+                weatherKind = envWeatherKind,
+                weatherTempText = envTempText,
+                nextEventText = envNextEventText,
+                minutesToNextEvent = if (envNextEventStartMs > 0L) {
+                    ((envNextEventStartMs - System.currentTimeMillis()) / 60000L)
+                        .toInt()
+                        .coerceAtLeast(0)
+                } else {
+                    -1
+                },
             )
+
+        private fun refreshEnvironmentIfStale() {
+            if (envRefreshRunning) return
+            val now = System.currentTimeMillis()
+            val weatherStale = now - envWeatherFetchedAtMs > 30L * 60 * 1000
+            val eventStale = now - envEventFetchedAtMs > 15L * 60 * 1000
+            if (!weatherStale && !eventStale) return
+            envRefreshRunning = true
+            val appContext = applicationContext
+            engineScope.launch(Dispatchers.IO) {
+                try {
+                    if (weatherStale) {
+                        EnvironmentDataProvider.fetchWeather(appContext)?.let { weather ->
+                            envWeatherKind = weather.kind
+                            envTempText = weather.tempText
+                            envWeatherFetchedAtMs = System.currentTimeMillis()
+                        }
+                    }
+                    if (eventStale) {
+                        EnvironmentDataProvider.fetchNextEvent(appContext)?.let { event ->
+                            envNextEventText = event.text
+                            envNextEventStartMs = event.startMs
+                            envEventFetchedAtMs = System.currentTimeMillis()
+                        }
+                    }
+                } finally {
+                    envRefreshRunning = false
+                }
+                launch(Dispatchers.Main.immediate) {
+                    maybeNotifyColorsChanged()
+                    if (engineVisible && animationJob?.isActive != true) {
+                        drawFrame(currentAnimationTimeSec())
+                    }
+                }
+            }
+        }
 
         private fun resolveEffectiveDesign(): CanvasDesign =
             RuleEvaluator.evaluate(activeDesign, currentSnapshot()).design

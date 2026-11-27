@@ -20,6 +20,17 @@ object TemplateFormatter {
             .replace("{date}", snapshot.dateText)
             .replace("{battery}", "${snapshot.batteryPercent}%")
             .replace("{charging_status}", snapshot.chargingLabel)
+            .replace("{weather_temp}", snapshot.weatherTempText)
+            .replace("{next_event}", snapshot.nextEventText)
+            .replace("{countdown}", formatCountdown(snapshot.minutesToNextEvent))
+    }
+
+    fun formatCountdown(minutesToNextEvent: Int): String {
+        if (minutesToNextEvent < 0) return ""
+        if (minutesToNextEvent < 60) return "あと${minutesToNextEvent}分"
+        val hours = minutesToNextEvent / 60
+        val rest = minutesToNextEvent % 60
+        return if (rest == 0) "あと${hours}時間" else "あと${hours}時間${rest}分"
     }
 }
 
@@ -106,6 +117,9 @@ object RuleEvaluator {
                 today >= start || today <= end
             }
         }
+        is RuleCondition.WeatherIs -> snapshot.weatherKind == condition.kind
+        is RuleCondition.EventWithin ->
+            snapshot.minutesToNextEvent in 0..condition.minutes
     }
 
     fun evaluateRule(

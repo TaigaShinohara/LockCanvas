@@ -14,8 +14,18 @@ data class DynamicDataSnapshot(
     val chargingLabel: String,
     val monthOfYear: Int = 1,
     val dayOfMonth: Int = 1,
+    val weatherKind: String = WEATHER_UNKNOWN,
+    val weatherTempText: String = "",
+    val nextEventText: String = "",
+    val minutesToNextEvent: Int = -1,
 ) {
     companion object {
+        const val WEATHER_UNKNOWN = "unknown"
+        const val WEATHER_CLEAR = "clear"
+        const val WEATHER_CLOUDY = "cloudy"
+        const val WEATHER_RAIN = "rain"
+        const val WEATHER_SNOW = "snow"
+
         fun sample(
             timeText: String = "09:41",
             dateText: String = "Mon, Nov 23",
@@ -25,6 +35,10 @@ data class DynamicDataSnapshot(
             chargingLabel: String = if (isCharging) "Charging" else "On Battery",
             monthOfYear: Int = 11,
             dayOfMonth: Int = 23,
+            weatherKind: String = WEATHER_CLEAR,
+            weatherTempText: String = "18℃",
+            nextEventText: String = "14:00 会議",
+            minutesToNextEvent: Int = 120,
         ): DynamicDataSnapshot = DynamicDataSnapshot(
             timeText = timeText,
             dateText = dateText,
@@ -34,6 +48,10 @@ data class DynamicDataSnapshot(
             chargingLabel = chargingLabel,
             monthOfYear = monthOfYear.coerceIn(1, 12),
             dayOfMonth = dayOfMonth.coerceIn(1, 31),
+            weatherKind = weatherKind,
+            weatherTempText = weatherTempText,
+            nextEventText = nextEventText,
+            minutesToNextEvent = minutesToNextEvent,
         )
 
         fun fromSystem(
@@ -41,6 +59,10 @@ data class DynamicDataSnapshot(
             isCharging: Boolean,
             nowMillis: Long = System.currentTimeMillis(),
             locale: Locale = Locale.getDefault(),
+            weatherKind: String = WEATHER_UNKNOWN,
+            weatherTempText: String = "",
+            nextEventText: String = "",
+            minutesToNextEvent: Int = -1,
         ): DynamicDataSnapshot {
             val calendar = Calendar.getInstance().apply { timeInMillis = nowMillis }
             val date = Date(nowMillis)
@@ -75,6 +97,10 @@ data class DynamicDataSnapshot(
                 chargingLabel = label,
                 monthOfYear = calendar.get(Calendar.MONTH) + 1,
                 dayOfMonth = calendar.get(Calendar.DAY_OF_MONTH),
+                weatherKind = weatherKind,
+                weatherTempText = weatherTempText,
+                nextEventText = nextEventText,
+                minutesToNextEvent = minutesToNextEvent,
             )
         }
     }
