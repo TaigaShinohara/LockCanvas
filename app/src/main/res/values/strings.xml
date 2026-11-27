@@ -3,4 +3,6 @@
     <string name="app_name">LockCanvas</string>
     <string name="wallpaper_label">LockCanvas Live Wallpaper</string>
     <string name="wallpaper_description">Dynamic lock-screen &amp; home-screen canvas powered by live battery, time, and custom rules.</string>
+    <string name="widget_label">LockCanvas コントロール</string>
+    <string name="widget_description">時計・電池・ライトボタンを置ける、ロック画面対応ウィジェット。</string>
 </resources>

@@ -78,6 +78,8 @@ class CanvasSceneRenderer(
         animationTimeSec: Float = 0f,
         selectedElementId: String? = null,
         showSafeAreaGuides: Boolean = false,
+        parallaxX: Float = 0f,
+        parallaxY: Float = 0f,
     ) {
         if (width <= 0 || height <= 0) return
 
@@ -95,7 +97,25 @@ class CanvasSceneRenderer(
             canvas.save()
             val cx = element.xFraction * width
             val cy = element.yFraction * height
-            canvas.translate(cx, cy)
+            // Gyro parallax: background layers (zIndex < 0) drift against the
+            // tilt and are slightly enlarged so their edges never show, while
+            // foreground elements drift a little with the tilt. The relative
+            // motion between the two is what reads as depth.
+            val isBackgroundLayer = element.zIndex < 0
+            val shiftX = if (isBackgroundLayer) {
+                -parallaxX * width * 0.035f
+            } else {
+                parallaxX * width * 0.012f
+            }
+            val shiftY = if (isBackgroundLayer) {
+                -parallaxY * height * 0.020f
+            } else {
+                parallaxY * height * 0.007f
+            }
+            canvas.translate(cx + shiftX, cy + shiftY)
+            if (isBackgroundLayer && (parallaxX != 0f || parallaxY != 0f)) {
+                canvas.scale(1.09f, 1.09f)
+            }
             if (element.rotationDegrees != 0f) {
                 canvas.rotate(element.rotationDegrees)
             }

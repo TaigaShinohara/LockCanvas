@@ -5,6 +5,12 @@
         android:name="android.software.live_wallpaper"
         android:required="true" />
 
+    <uses-permission android:name="android.permission.FLASHLIGHT" />
+    <uses-permission android:name="android.permission.READ_CALENDAR" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="com.android.alarm.permission.SET_ALARM" />
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -35,6 +41,19 @@
                 android:name="android.service.wallpaper"
                 android:resource="@xml/lock_canvas_wallpaper" />
         </service>
+
+        <receiver
+            android:name=".widget.LockCanvasWidgetProvider"
+            android:exported="true"
+            android:label="@string/widget_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.lockcanvas.app.action.TOGGLE_TORCH" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/lockcanvas_widget_info" />
+        </receiver>
 
     </application>
 

@@ -1,6 +1,10 @@
 package com.lockcanvas.app.ui.screens
 
+import android.Manifest
+import android.content.pm.PackageManager
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -16,6 +20,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.outlined.BatteryChargingFull
+import androidx.compose.material.icons.outlined.Event
 import androidx.compose.material.icons.outlined.Layers
 import androidx.compose.material.icons.outlined.LockClock
 import androidx.compose.material.icons.outlined.Restore
@@ -45,7 +50,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -177,6 +184,11 @@ fun SettingsInfoScreen(
                 headline = "電池にやさしい設計",
                 supporting = "画面が消えているときは描画を止めます。動きのないデザインでは、表示が変わるときだけ更新します",
             )
+            HorizontalDivider(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                color = MaterialTheme.colorScheme.outlineVariant,
+            )
+            WidgetPermissionSection()
         }
     }
 
@@ -184,7 +196,7 @@ fun SettingsInfoScreen(
         AlertDialog(
             onDismissRequest = { showResetDialog = false },
             title = { Text("初期状態に戻しますか？") },
-            text = { Text("保存したデザインはすべて削除され、最初のプリセット3種類だけが残ります。あなたが作ったデザインもすべて削除されます。この操作は取り消せません。") },
+            text = { Text("保存したデザインはすべて削除され、最初のプリセット6種類だけが残ります。あなたが作ったデザインもすべて削除されます。この操作は取り消せません。") },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -201,6 +213,49 @@ fun SettingsInfoScreen(
                 }
             },
         )
+    }
+}
+
+@Composable
+private fun WidgetPermissionSection() {
+    val context = LocalContext.current
+    val widgetPermissions = arrayOf(
+        Manifest.permission.READ_CALENDAR,
+        Manifest.permission.ACCESS_COARSE_LOCATION,
+    )
+    fun allGranted(): Boolean = widgetPermissions.all { permission ->
+        ContextCompat.checkSelfPermission(
+            context,
+            permission,
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    var granted by remember { mutableStateOf(allGranted()) }
+    val launcher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions(),
+    ) { result ->
+        granted = result.values.all { it } || allGranted()
+    }
+
+    SpecListItem(
+        icon = Icons.Outlined.Event,
+        headline = "ロック画面ウィジェットの表示",
+        supporting = if (granted) {
+            "許可済みです。ウィジェットに次の予定と天気が表示されます"
+        } else {
+            "ウィジェットに「次の予定」と「天気」を出すには、カレンダーと位置情報の許可が必要です"
+        },
+    )
+    if (!granted) {
+        FilledTonalButton(
+            onClick = { launcher.launch(widgetPermissions) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 4.dp)
+                .height(44.dp),
+        ) {
+            Text("予定と天気の表示を許可する")
+        }
     }
 }
 
